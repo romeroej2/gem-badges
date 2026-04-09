@@ -23,9 +23,9 @@ Run `npm run showcase:dev` to open the demo app. It includes:
 ## Install
 
 ```bash
-npm install fancy-buttons
+npm install gem-badges
 # or
-bun add fancy-buttons
+bun add gem-badges
 ```
 
 > **Peer dependencies:** React ≥ 18
@@ -35,7 +35,7 @@ bun add fancy-buttons
 ## Quick start
 
 ```tsx
-import { GemBadge } from 'fancy-buttons'
+import { GemBadge } from 'gem-badges'
 
 // Defaults: diamond, round cut, 72 px, glow on
 <GemBadge />
@@ -88,7 +88,7 @@ When an `onClick` handler is passed, the badge automatically becomes a button:
 A full `<button>` element with an embedded 3D WebGL gem and animated glow.
 
 ```tsx
-import { GemButton, DiamondButton, RubyButton } from 'fancy-buttons'
+import { GemButton, DiamondButton, RubyButton } from 'gem-badges'
 
 <GemButton gem="emerald" size="lg">Continue</GemButton>
 
@@ -209,7 +209,7 @@ Add `'use client'` to any component that imports `GemBadge` or `GemButton`, as b
 
 ```tsx
 'use client'
-import { GemBadge } from 'fancy-buttons'
+import { GemBadge } from 'gem-badges'
 ```
 
 ---

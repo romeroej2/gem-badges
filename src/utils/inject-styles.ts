@@ -1,4 +1,4 @@
-const STYLE_ID = 'fancy-buttons-styles'
+const STYLE_ID = 'gem-badges-styles'
 
 const CSS = `
   @keyframes fb-glow-pulse {
