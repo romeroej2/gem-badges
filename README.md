@@ -8,9 +8,11 @@ Each badge is a physically-based 3D gem with realistic light refraction, chromat
 
 ## Showcase
 
+![gem-badges showcase](screenshots/showcase-full.png)
+
 **GEM BADGE LAB** — interactive demo at `showcase/`
 
-Run `npm run showcase:dev` to open the demo app. It includes:
+Run `bun run showcase:dev` to open the demo app:
 - Interactive stone / cut / size / glow controls
 - All 6 gem materials rendered side by side
 - All 6 cuts (round, princess, oval, emerald, heart, marquise)
@@ -23,9 +25,9 @@ Run `npm run showcase:dev` to open the demo app. It includes:
 ## Install
 
 ```bash
-npm install gem-badges
-# or
 bun add gem-badges
+# or
+npm install gem-badges
 ```
 
 > **Peer dependencies:** React ≥ 18
@@ -218,13 +220,13 @@ import { GemBadge } from 'gem-badges'
 
 ```bash
 # Build the library
-npm run build
+bun run build
 
 # Watch mode
-npm run dev
+bun run dev
 
 # Run the showcase
-npm run showcase:dev   # starts on http://localhost:3000
+bun run showcase:dev   # starts on http://localhost:3000
 ```
 
 ---
