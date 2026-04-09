@@ -1569,12 +1569,7 @@ function RoundGemFacetRender() {
           />
         ))}
 
-        <circle cx="50" cy="50" r="7.6" fill="rgba(255,255,255,0.08)" />
         <circle cx="50" cy="50" r="18" fill="url(#round-diamond-core)" />
-        <circle cx="50" cy="50" r="4.5" fill="rgba(82,92,108,0.08)" />
-        <circle cx="28" cy="79" r="2.8" fill="rgba(186,228,255,0.18)" />
-        <circle cx="76" cy="82" r="2.2" fill="rgba(255,222,214,0.16)" />
-        <circle cx="81" cy="25" r="2.0" fill="rgba(255,238,200,0.14)" />
       </g>
 
       <circle
