@@ -1429,7 +1429,7 @@ function pointsToString(points: ReadonlyArray<readonly [number, number]>) {
   return points.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ')
 }
 
-function RoundDiamondFacetRender() {
+function RoundGemFacetRender() {
   const facets = useMemo(() => {
     const geometry = buildRoundBrilliantCut()
     const position = geometry.getAttribute('position')
@@ -1597,14 +1597,29 @@ function RoundDiamondFacetRender() {
   )
 }
 
-function RealisticRoundDiamondOrb({
+function RealisticRoundGemOrb({
   glowAmount,
   hovered,
+  cfg,
+  stone,
 }: {
   glowAmount: number
   hovered: boolean
+  cfg: StoneConfig
+  stone: GemBadgeStone
 }) {
   const haloStrength = 0.08 + glowAmount * (hovered ? 0.10 : 0.06)
+  const tintOpacity = stone === 'diamond' ? 0 : 0.94
+  const tintBackground = [
+    `radial-gradient(circle at 28% 24%, ${rgba(cfg.keyLight, 0.28)} 0%, ${rgba(cfg.keyLight, 0.18)} 10%, ${rgba(cfg.gemColor, 0.12)} 24%, transparent 40%)`,
+    `radial-gradient(circle at 74% 76%, ${rgba(cfg.glowColor, 0.52)} 0%, ${rgba(cfg.glowColor, 0.20)} 12%, transparent 30%)`,
+    `radial-gradient(circle at 24% 78%, ${rgba(cfg.fillLight, 0.20)} 0%, ${rgba(cfg.fillLight, 0.08)} 12%, transparent 28%)`,
+    `radial-gradient(circle at 50% 52%, ${rgba(cfg.gemColor, 0.28)} 0%, ${rgba(cfg.gemColor, 0.40)} 56%, ${rgba(cfg.coreColor, 0.86)} 100%)`,
+  ].join(', ')
+  const tintSheen = [
+    `conic-gradient(from 210deg, transparent 0deg, ${rgba(cfg.rimLight, 0.18)} 34deg, transparent 78deg, ${rgba(cfg.fillLight, 0.14)} 138deg, transparent 208deg, ${rgba(cfg.keyLight, 0.18)} 282deg, transparent 334deg, ${rgba(cfg.rimLight, 0.12)} 360deg)`,
+    `radial-gradient(circle at 48% 42%, ${rgba(cfg.keyLight, 0.18)} 0%, transparent 42%)`,
+  ].join(', ')
 
   return (
     <div
@@ -1612,11 +1627,50 @@ function RealisticRoundDiamondOrb({
         position: 'relative',
         width: '100%',
         height: '100%',
+        isolation: 'isolate',
         overflow: 'visible',
-        filter: `drop-shadow(0 10px 18px rgba(210, 220, 232, ${haloStrength.toFixed(2)}))`,
+        filter: `drop-shadow(0 10px 18px ${rgba(stone === 'diamond' ? '#d2dce8' : cfg.glowColor, haloStrength)})`,
       }}
     >
-      <RoundDiamondFacetRender />
+      <RoundGemFacetRender />
+
+      {stone !== 'diamond' && (
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              inset: '2.2%',
+              borderRadius: '50%',
+              background: tintBackground,
+              mixBlendMode: 'color',
+              opacity: tintOpacity,
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: '2.2%',
+              borderRadius: '50%',
+              background: tintSheen,
+              mixBlendMode: 'screen',
+              opacity: 0.62,
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: '4%',
+              borderRadius: '50%',
+              border: `1px solid ${rgba(cfg.rimLight, 0.28)}`,
+              boxShadow: `0 0 18px ${rgba(cfg.glowColor, haloStrength * 0.75)}`,
+              opacity: 0.88,
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      )}
     </div>
   )
 }
@@ -1634,7 +1688,7 @@ export function GemBadge({
 }: GemBadgeProps) {
   const [hovered, setHovered] = useState(false)
   const cfg = STONE_CONFIGS[stone] ?? STONE_CONFIGS.diamond
-  const isRealisticRoundDiamond = stone === 'diamond' && cut === 'round'
+  const isRealisticRoundGem = cut === 'round'
   const label = ariaLabel ?? (
     `${DIAMOND_CUTS[cut].label} ${stone} gem`
   )
@@ -1665,10 +1719,12 @@ export function GemBadge({
         ...style,
       }}
     >
-      {isRealisticRoundDiamond ? (
-        <RealisticRoundDiamondOrb
+      {isRealisticRoundGem ? (
+        <RealisticRoundGemOrb
           glowAmount={glowAmount}
           hovered={hovered}
+          cfg={cfg}
+          stone={stone}
         />
       ) : (
         <CutGemOrb
