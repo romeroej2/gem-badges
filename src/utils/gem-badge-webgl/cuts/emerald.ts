@@ -14,67 +14,84 @@ export function buildEmeraldCutGeometry(): THREE.BufferGeometry {
     indices.push(a, b, c)
   }
 
-  const lW = 1.25
-  const w = lW / 2
-  const d = 0.80 / 2
+  // FacetDiagrams.org 04.040 "Super Emerald"
+  // L/W = 1.400, H/W = 0.908, 43+8 facets.
+  const halfLength = 0.70
+  const halfWidth = 0.50
+  const totalDepth = 0.908
+  const girdleTop = 0.01
+  const girdleBottom = -0.01
+  const crownHeight = 0.22
+  const pavilionDepth = totalDepth - (girdleTop - girdleBottom) - crownHeight
 
-  const crownA = 0.52
-  const crownB = 0.44
-  const crownC = 0.36
-  const crownD = 0.28
-  const girdle = 0.02
-  const pavilion1 = -0.18
-  const pavilion2 = -0.42
-  const pavilion3 = -0.60
-  const culet = -0.76
+  const tableLength = halfLength * 0.52
+  const tableWidth = halfWidth * 0.52
+  const crownALength = halfLength * 0.60
+  const crownAWidth = halfWidth * 0.60
+  const crownBLength = halfLength * 0.76
+  const crownBWidth = halfWidth * 0.76
+  const crownCLength = halfLength * 0.90
+  const crownCWidth = halfWidth * 0.90
+  const crownDLength = halfLength * 0.98
+  const crownDWidth = halfWidth * 0.98
+
+  const crownA = girdleTop + crownHeight
+  const crownB = girdleTop + crownHeight * 0.72
+  const crownC = girdleTop + crownHeight * 0.46
+  const crownD = girdleTop + crownHeight * 0.20
+
+  const pavilion1 = girdleBottom - pavilionDepth * 0.28
+  const pavilion2 = girdleBottom - pavilionDepth * 0.57
+  const pavilion3 = girdleBottom - pavilionDepth * 0.82
+  const culet = girdleBottom - pavilionDepth
 
   const tableV = [
     addVertex(new THREE.Vector3(0, crownA, 0)),
-    addVertex(new THREE.Vector3(w * 0.5, crownA, d * 0.5)),
-    addVertex(new THREE.Vector3(w * 0.5, crownA, -d * 0.5)),
-    addVertex(new THREE.Vector3(-w * 0.5, crownA, -d * 0.5)),
-    addVertex(new THREE.Vector3(-w * 0.5, crownA, d * 0.5)),
+    addVertex(new THREE.Vector3(tableLength, crownA, tableWidth)),
+    addVertex(new THREE.Vector3(tableLength, crownA, -tableWidth)),
+    addVertex(new THREE.Vector3(-tableLength, crownA, -tableWidth)),
+    addVertex(new THREE.Vector3(-tableLength, crownA, tableWidth)),
   ]
 
-  const crownA0 = addVertex(new THREE.Vector3(w * 0.56, crownA, d * 0.56))
-  const crownA1 = addVertex(new THREE.Vector3(w * 0.56, crownA, -d * 0.56))
-  const crownA2 = addVertex(new THREE.Vector3(-w * 0.56, crownA, -d * 0.56))
-  const crownA3 = addVertex(new THREE.Vector3(-w * 0.56, crownA, d * 0.56))
+  const crownA0 = addVertex(new THREE.Vector3(crownALength, crownA, crownAWidth))
+  const crownA1 = addVertex(new THREE.Vector3(crownALength, crownA, -crownAWidth))
+  const crownA2 = addVertex(new THREE.Vector3(-crownALength, crownA, -crownAWidth))
+  const crownA3 = addVertex(new THREE.Vector3(-crownALength, crownA, crownAWidth))
 
-  const crownB0 = addVertex(new THREE.Vector3(w * 0.72, crownB, d * 0.72))
-  const crownB1 = addVertex(new THREE.Vector3(w * 0.72, crownB, -d * 0.72))
-  const crownB2 = addVertex(new THREE.Vector3(-w * 0.72, crownB, -d * 0.72))
-  const crownB3 = addVertex(new THREE.Vector3(-w * 0.72, crownB, d * 0.72))
+  const crownB0 = addVertex(new THREE.Vector3(crownBLength, crownB, crownBWidth))
+  const crownB1 = addVertex(new THREE.Vector3(crownBLength, crownB, -crownBWidth))
+  const crownB2 = addVertex(new THREE.Vector3(-crownBLength, crownB, -crownBWidth))
+  const crownB3 = addVertex(new THREE.Vector3(-crownBLength, crownB, crownBWidth))
 
-  const crownC0 = addVertex(new THREE.Vector3(w * 0.86, crownC, d * 0.86))
-  const crownC1 = addVertex(new THREE.Vector3(w * 0.86, crownC, -d * 0.86))
-  const crownC2 = addVertex(new THREE.Vector3(-w * 0.86, crownC, -d * 0.86))
-  const crownC3 = addVertex(new THREE.Vector3(-w * 0.86, crownC, d * 0.86))
+  const crownC0 = addVertex(new THREE.Vector3(crownCLength, crownC, crownCWidth))
+  const crownC1 = addVertex(new THREE.Vector3(crownCLength, crownC, -crownCWidth))
+  const crownC2 = addVertex(new THREE.Vector3(-crownCLength, crownC, -crownCWidth))
+  const crownC3 = addVertex(new THREE.Vector3(-crownCLength, crownC, crownCWidth))
 
-  const crownD0 = addVertex(new THREE.Vector3(w, crownD, d))
-  const crownD1 = addVertex(new THREE.Vector3(w, crownD, -d))
-  const crownD2 = addVertex(new THREE.Vector3(-w, crownD, -d))
-  const crownD3 = addVertex(new THREE.Vector3(-w, crownD, d))
+  const crownD0 = addVertex(new THREE.Vector3(crownDLength, crownD, crownDWidth))
+  const crownD1 = addVertex(new THREE.Vector3(crownDLength, crownD, -crownDWidth))
+  const crownD2 = addVertex(new THREE.Vector3(-crownDLength, crownD, -crownDWidth))
+  const crownD3 = addVertex(new THREE.Vector3(-crownDLength, crownD, crownDWidth))
 
-  const girdle0 = addVertex(new THREE.Vector3(w * 1.02, girdle, d * 1.02))
-  const girdle1 = addVertex(new THREE.Vector3(w * 1.02, girdle, -d * 1.02))
-  const girdle2 = addVertex(new THREE.Vector3(-w * 1.02, girdle, -d * 1.02))
-  const girdle3 = addVertex(new THREE.Vector3(-w * 1.02, girdle, d * 1.02))
+  const girdle0 = addVertex(new THREE.Vector3(halfLength, girdleBottom, halfWidth))
+  const girdle1 = addVertex(new THREE.Vector3(halfLength, girdleBottom, -halfWidth))
+  const girdle2 = addVertex(new THREE.Vector3(-halfLength, girdleBottom, -halfWidth))
+  const girdle3 = addVertex(new THREE.Vector3(-halfLength, girdleBottom, halfWidth))
 
-  const p1_0 = addVertex(new THREE.Vector3(w * 0.94, pavilion1, d * 0.94))
-  const p1_1 = addVertex(new THREE.Vector3(w * 0.94, pavilion1, -d * 0.94))
-  const p1_2 = addVertex(new THREE.Vector3(-w * 0.94, pavilion1, -d * 0.94))
-  const p1_3 = addVertex(new THREE.Vector3(-w * 0.94, pavilion1, d * 0.94))
+  const p1_0 = addVertex(new THREE.Vector3(halfLength * 0.92, pavilion1, halfWidth * 0.92))
+  const p1_1 = addVertex(new THREE.Vector3(halfLength * 0.92, pavilion1, -halfWidth * 0.92))
+  const p1_2 = addVertex(new THREE.Vector3(-halfLength * 0.92, pavilion1, -halfWidth * 0.92))
+  const p1_3 = addVertex(new THREE.Vector3(-halfLength * 0.92, pavilion1, halfWidth * 0.92))
 
-  const p2_0 = addVertex(new THREE.Vector3(w * 0.68, pavilion2, d * 0.68))
-  const p2_1 = addVertex(new THREE.Vector3(w * 0.68, pavilion2, -d * 0.68))
-  const p2_2 = addVertex(new THREE.Vector3(-w * 0.68, pavilion2, -d * 0.68))
-  const p2_3 = addVertex(new THREE.Vector3(-w * 0.68, pavilion2, d * 0.68))
+  const p2_0 = addVertex(new THREE.Vector3(halfLength * 0.70, pavilion2, halfWidth * 0.70))
+  const p2_1 = addVertex(new THREE.Vector3(halfLength * 0.70, pavilion2, -halfWidth * 0.70))
+  const p2_2 = addVertex(new THREE.Vector3(-halfLength * 0.70, pavilion2, -halfWidth * 0.70))
+  const p2_3 = addVertex(new THREE.Vector3(-halfLength * 0.70, pavilion2, halfWidth * 0.70))
 
-  const p3_0 = addVertex(new THREE.Vector3(w * 0.38, pavilion3, d * 0.38))
-  const p3_1 = addVertex(new THREE.Vector3(w * 0.38, pavilion3, -d * 0.38))
-  const p3_2 = addVertex(new THREE.Vector3(-w * 0.38, pavilion3, -d * 0.38))
-  const p3_3 = addVertex(new THREE.Vector3(-w * 0.38, pavilion3, d * 0.38))
+  const p3_0 = addVertex(new THREE.Vector3(halfLength * 0.40, pavilion3, halfWidth * 0.40))
+  const p3_1 = addVertex(new THREE.Vector3(halfLength * 0.40, pavilion3, -halfWidth * 0.40))
+  const p3_2 = addVertex(new THREE.Vector3(-halfLength * 0.40, pavilion3, -halfWidth * 0.40))
+  const p3_3 = addVertex(new THREE.Vector3(-halfLength * 0.40, pavilion3, halfWidth * 0.40))
 
   const culetV = addVertex(new THREE.Vector3(0, culet, 0))
 
@@ -89,7 +106,7 @@ export function buildEmeraldCutGeometry(): THREE.BufferGeometry {
   addTri(tableV[4], crownA3, tableV[1])
 
   addTri(tableV[1], crownA1, crownA0)
-  addTri(tableV[1], crownA3, crownA3)
+  addTri(tableV[1], crownA0, crownA3)
   addTri(tableV[2], crownA1, crownA0)
   addTri(tableV[2], crownA2, crownA1)
   addTri(tableV[3], crownA2, crownA1)
@@ -136,6 +153,20 @@ export function buildEmeraldCutGeometry(): THREE.BufferGeometry {
   addTri(p3_1, culetV, p3_2)
   addTri(p3_2, culetV, p3_3)
   addTri(p3_3, culetV, p3_0)
+
+  for (let index = 0; index < indices.length; index += 3) {
+    const a = vertices[indices[index]]
+    const b = vertices[indices[index + 1]]
+    const c = vertices[indices[index + 2]]
+    const normal = b.clone().sub(a).cross(c.clone().sub(a))
+    const centroid = a.clone().add(b).add(c).multiplyScalar(1 / 3)
+
+    if (normal.dot(centroid) < 0) {
+      const temp = indices[index + 1]
+      indices[index + 1] = indices[index + 2]
+      indices[index + 2] = temp
+    }
+  }
 
   return finalizeIndexedGeometry(vertices, indices)
 }

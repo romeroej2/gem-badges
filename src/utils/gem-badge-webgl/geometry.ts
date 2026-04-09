@@ -3,6 +3,7 @@ import type { GemCut, PreparedGeometry } from './types'
 import { MAX_FACETS } from './shaders'
 import { buildEmeraldCutGeometry } from './cuts/emerald'
 import { buildHeartCutGeometry } from './cuts/heart'
+import { buildMarquiseCutGeometry } from './cuts/marquise'
 import { buildPrincessCut } from './cuts/princess'
 import { buildRoundBrilliantCut } from './cuts/round'
 import { buildLatheCut } from './cuts/shared'
@@ -29,15 +30,7 @@ function buildCutGeometry(cut: GemCut) {
     case 'heart':
       return buildHeartCutGeometry()
     case 'marquise':
-      return buildLatheCut([
-        [0, -0.92],
-        [0.06, -0.78],
-        [0.32, -0.08],
-        [0.46, 0.06],
-        [0.30, 0.34],
-        [0.10, 0.62],
-        [0, 0.78],
-      ], 8, [1.05, 1, 0.72])
+      return buildMarquiseCutGeometry()
     default:
       return buildPrincessCut()
     }
