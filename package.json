@@ -2,6 +2,7 @@
   "name": "fancy-buttons",
   "version": "0.1.0",
   "description": "Beautiful precious stone-inspired React button components",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
