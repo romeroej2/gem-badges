@@ -293,33 +293,152 @@ function parseColor(color: string): [number, number, number] {
 }
 
 function buildPrincessCut(): THREE.BufferGeometry {
-  const halfWidth = 0.50
-  const tableHalf = 0.27
-  const crownHeight = 0.10
-  const pavilionDepth = 0.62
+  const vertices: THREE.Vector3[] = []
+  const indices: number[] = []
 
-  const vertices = new Float32Array([
-    -tableHalf, crownHeight, -tableHalf,   tableHalf, crownHeight, -tableHalf,   tableHalf, crownHeight, tableHalf,   -tableHalf, crownHeight, tableHalf,
-    -halfWidth, 0, -halfWidth,   halfWidth, 0, -halfWidth,   halfWidth, 0, halfWidth,   -halfWidth, 0, halfWidth,
-    0, 0, -halfWidth,   halfWidth, 0, 0,   0, 0, halfWidth,   -halfWidth, 0, 0,
-    0, -pavilionDepth, 0,
-    0, crownHeight, -tableHalf,   tableHalf, crownHeight, 0,   0, crownHeight, tableHalf,   -tableHalf, crownHeight, 0,
-  ])
+  const addVertex = (vertex: THREE.Vector3) => {
+    vertices.push(vertex)
+    return vertices.length - 1
+  }
 
-  const indices = [
-    0, 3, 2, 0, 2, 1,
-    0, 13, 8, 0, 8, 4, 13, 1, 5, 13, 5, 8,
-    1, 14, 9, 1, 9, 5, 14, 2, 6, 14, 6, 9,
-    3, 15, 10, 3, 10, 7, 15, 2, 6, 15, 6, 10,
-    3, 16, 11, 3, 11, 7, 16, 0, 4, 16, 4, 11,
-    4, 8, 12, 8, 5, 12,
-    5, 9, 12, 9, 6, 12,
-    6, 10, 12, 10, 7, 12,
-    7, 11, 12, 11, 4, 12,
+  const addTri = (a: number, b: number, c: number) => {
+    indices.push(a, b, c)
+  }
+
+  const halfW = 0.50
+  const halfD = 0.50
+
+  const crownT = 0.14
+  const crownD = 0.10
+  const crownStar = 0.06
+  const crownB = 0.02
+  const girdle = -0.06
+  const pavilion1 = -0.24
+  const pavilion2 = -0.42
+  const pavilion3 = -0.56
+  const pavilion4 = -0.66
+  const pavilion5 = -0.70
+
+  const tableV = [
+    addVertex(new THREE.Vector3(0, crownT, 0)),
+    addVertex(new THREE.Vector3(halfW * 0.50, crownT, halfD * 0.50)),
+    addVertex(new THREE.Vector3(halfW * 0.50, crownT, -halfD * 0.50)),
+    addVertex(new THREE.Vector3(-halfW * 0.50, crownT, -halfD * 0.50)),
+    addVertex(new THREE.Vector3(-halfW * 0.50, crownT, halfD * 0.50)),
   ]
 
+  const crownD0 = addVertex(new THREE.Vector3(halfW * 0.56, crownD, halfD * 0.56))
+  const crownD1 = addVertex(new THREE.Vector3(halfW * 0.56, crownD, -halfD * 0.56))
+  const crownD2 = addVertex(new THREE.Vector3(-halfW * 0.56, crownD, -halfD * 0.56))
+  const crownD3 = addVertex(new THREE.Vector3(-halfW * 0.56, crownD, halfD * 0.56))
+
+  const crownStar0 = addVertex(new THREE.Vector3(halfW * 0.64, crownStar, halfD * 0.64))
+  const crownStar1 = addVertex(new THREE.Vector3(halfW * 0.64, crownStar, -halfD * 0.64))
+  const crownStar2 = addVertex(new THREE.Vector3(-halfW * 0.64, crownStar, -halfD * 0.64))
+  const crownStar3 = addVertex(new THREE.Vector3(-halfW * 0.64, crownStar, halfD * 0.64))
+
+  const crownB0 = addVertex(new THREE.Vector3(halfW * 0.80, crownB, halfD * 0.80))
+  const crownB1 = addVertex(new THREE.Vector3(halfW * 0.80, crownB, -halfD * 0.80))
+  const crownB2 = addVertex(new THREE.Vector3(-halfW * 0.80, crownB, -halfD * 0.80))
+  const crownB3 = addVertex(new THREE.Vector3(-halfW * 0.80, crownB, halfD * 0.80))
+
+  const crownA0 = addVertex(new THREE.Vector3(halfW * 0.90, crownB, halfD * 0.90))
+  const crownA1 = addVertex(new THREE.Vector3(halfW * 0.90, crownB, -halfD * 0.90))
+  const crownA2 = addVertex(new THREE.Vector3(-halfW * 0.90, crownB, -halfD * 0.90))
+  const crownA3 = addVertex(new THREE.Vector3(-halfW * 0.90, crownB, halfD * 0.90))
+
+  const girdle0 = addVertex(new THREE.Vector3(halfW, girdle, halfD))
+  const girdle1 = addVertex(new THREE.Vector3(halfW, girdle, -halfD))
+  const girdle2 = addVertex(new THREE.Vector3(-halfW, girdle, -halfD))
+  const girdle3 = addVertex(new THREE.Vector3(-halfW, girdle, halfD))
+
+  const p1_0 = addVertex(new THREE.Vector3(halfW * 0.88, pavilion1, halfD * 0.88))
+  const p1_1 = addVertex(new THREE.Vector3(halfW * 0.88, pavilion1, -halfD * 0.88))
+  const p1_2 = addVertex(new THREE.Vector3(-halfW * 0.88, pavilion1, -halfD * 0.88))
+  const p1_3 = addVertex(new THREE.Vector3(-halfW * 0.88, pavilion1, halfD * 0.88))
+
+  const p2_0 = addVertex(new THREE.Vector3(halfW * 0.70, pavilion2, halfD * 0.70))
+  const p2_1 = addVertex(new THREE.Vector3(halfW * 0.70, pavilion2, -halfD * 0.70))
+  const p2_2 = addVertex(new THREE.Vector3(-halfW * 0.70, pavilion2, -halfD * 0.70))
+  const p2_3 = addVertex(new THREE.Vector3(-halfW * 0.70, pavilion2, halfD * 0.70))
+
+  const p3_0 = addVertex(new THREE.Vector3(halfW * 0.48, pavilion3, halfD * 0.48))
+  const p3_1 = addVertex(new THREE.Vector3(halfW * 0.48, pavilion3, -halfD * 0.48))
+  const p3_2 = addVertex(new THREE.Vector3(-halfW * 0.48, pavilion3, -halfD * 0.48))
+  const p3_3 = addVertex(new THREE.Vector3(-halfW * 0.48, pavilion3, halfD * 0.48))
+
+  const p4_0 = addVertex(new THREE.Vector3(halfW * 0.26, pavilion4, halfD * 0.26))
+  const p4_1 = addVertex(new THREE.Vector3(halfW * 0.26, pavilion4, -halfD * 0.26))
+  const p4_2 = addVertex(new THREE.Vector3(-halfW * 0.26, pavilion4, -halfD * 0.26))
+  const p4_3 = addVertex(new THREE.Vector3(-halfW * 0.26, pavilion4, halfD * 0.26))
+
+  const p5_0 = addVertex(new THREE.Vector3(halfW * 0.06, pavilion5, halfD * 0.06))
+  const p5_1 = addVertex(new THREE.Vector3(halfW * 0.06, pavilion5, -halfD * 0.06))
+  const p5_2 = addVertex(new THREE.Vector3(-halfW * 0.06, pavilion5, -halfD * 0.06))
+  const p5_3 = addVertex(new THREE.Vector3(-halfW * 0.06, pavilion5, halfD * 0.06))
+
+  addTri(tableV[0], tableV[1], tableV[2])
+  addTri(tableV[0], tableV[2], tableV[3])
+  addTri(tableV[0], tableV[3], tableV[4])
+  addTri(tableV[0], tableV[4], tableV[1])
+
+  addTri(tableV[1], crownD0, tableV[2])
+  addTri(tableV[2], crownD1, tableV[3])
+  addTri(tableV[3], crownD2, tableV[4])
+  addTri(tableV[4], crownD3, tableV[1])
+
+  addTri(tableV[1], crownD1, crownD0)
+  addTri(tableV[2], crownD2, crownD1)
+  addTri(tableV[3], crownD3, crownD2)
+  addTri(tableV[4], crownD0, crownD3)
+
+  addTri(crownD0, crownStar0, crownD1)
+  addTri(crownD1, crownStar1, crownD2)
+  addTri(crownD2, crownStar2, crownD3)
+  addTri(crownD3, crownStar3, crownD0)
+
+  addTri(crownStar0, crownB0, crownStar1)
+  addTri(crownStar1, crownB1, crownStar2)
+  addTri(crownStar2, crownB2, crownStar3)
+  addTri(crownStar3, crownB3, crownStar0)
+
+  addTri(crownB0, crownA0, crownB1)
+  addTri(crownB1, crownA1, crownB2)
+  addTri(crownB2, crownA2, crownB3)
+  addTri(crownB3, crownA3, crownB0)
+
+  addTri(crownA0, girdle0, crownA1)
+  addTri(crownA1, girdle1, crownA2)
+  addTri(crownA2, girdle2, crownA3)
+  addTri(crownA3, girdle3, crownA0)
+
+  addTri(girdle0, p1_0, girdle1)
+  addTri(girdle1, p1_1, girdle2)
+  addTri(girdle2, p1_2, girdle3)
+  addTri(girdle3, p1_3, girdle0)
+
+  addTri(p1_0, p2_0, p1_1)
+  addTri(p1_1, p2_1, p1_2)
+  addTri(p1_2, p2_2, p1_3)
+  addTri(p1_3, p2_3, p1_0)
+
+  addTri(p2_0, p3_0, p2_1)
+  addTri(p2_1, p3_1, p2_2)
+  addTri(p2_2, p3_2, p2_3)
+  addTri(p2_3, p3_3, p2_0)
+
+  addTri(p3_0, p4_0, p3_1)
+  addTri(p3_1, p4_1, p3_2)
+  addTri(p3_2, p4_2, p3_3)
+  addTri(p3_3, p4_3, p3_0)
+
+  addTri(p4_0, p5_0, p4_1)
+  addTri(p4_1, p5_1, p4_2)
+  addTri(p4_2, p5_2, p4_3)
+  addTri(p4_3, p5_3, p4_0)
+
   const geometry = new THREE.BufferGeometry()
-  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3))
+  geometry.setFromPoints(vertices)
   geometry.setIndex(indices)
 
   const faceted = geometry.toNonIndexed()
@@ -432,49 +551,291 @@ function buildLatheCut(points: Array<[number, number]>, segments: number, scale?
   return faceted
 }
 
-function buildEmeraldCutGeometry() {
-  const geometry = new THREE.BoxGeometry(1.18, 0.52, 0.84, 1, 1, 1).toNonIndexed()
-  const position = geometry.getAttribute('position')
+function buildEmeraldCutGeometry(): THREE.BufferGeometry {
+  const vertices: THREE.Vector3[] = []
+  const indices: number[] = []
 
-  for (let index = 0; index < position.count; index += 1) {
-    const x = position.getX(index)
-    const y = position.getY(index)
-    const z = position.getZ(index)
-
-    const bevelX = Math.sign(x) * 0.10 * (1 - Math.min(1, Math.abs(z) / 0.42))
-    const bevelZ = Math.sign(z) * 0.10 * (1 - Math.min(1, Math.abs(x) / 0.59))
-    const taper = y < 0 ? 0.76 : 0.88
-
-    position.setXYZ(index, (x - bevelX) * taper, y, (z - bevelZ) * taper)
+  const addVertex = (vertex: THREE.Vector3) => {
+    vertices.push(vertex)
+    return vertices.length - 1
   }
 
-  position.needsUpdate = true
-  geometry.computeVertexNormals()
-  return geometry
+  const addTri = (a: number, b: number, c: number) => {
+    indices.push(a, b, c)
+  }
+
+  const lW = 1.25
+  const w = lW / 2
+  const d = 0.80 / 2
+
+  const crownA = 0.52
+  const crownB = 0.44
+  const crownC = 0.36
+  const crownD = 0.28
+  const girdle = 0.02
+  const pavilion1 = -0.18
+  const pavilion2 = -0.42
+  const pavilion3 = -0.60
+  const culet = -0.76
+
+  const tableV = [
+    addVertex(new THREE.Vector3(0, crownA, 0)),
+    addVertex(new THREE.Vector3(w * 0.5, crownA, d * 0.5)),
+    addVertex(new THREE.Vector3(w * 0.5, crownA, -d * 0.5)),
+    addVertex(new THREE.Vector3(-w * 0.5, crownA, -d * 0.5)),
+    addVertex(new THREE.Vector3(-w * 0.5, crownA, d * 0.5)),
+  ]
+
+  const crownA0 = addVertex(new THREE.Vector3(w * 0.56, crownA, d * 0.56))
+  const crownA1 = addVertex(new THREE.Vector3(w * 0.56, crownA, -d * 0.56))
+  const crownA2 = addVertex(new THREE.Vector3(-w * 0.56, crownA, -d * 0.56))
+  const crownA3 = addVertex(new THREE.Vector3(-w * 0.56, crownA, d * 0.56))
+
+  const crownB0 = addVertex(new THREE.Vector3(w * 0.72, crownB, d * 0.72))
+  const crownB1 = addVertex(new THREE.Vector3(w * 0.72, crownB, -d * 0.72))
+  const crownB2 = addVertex(new THREE.Vector3(-w * 0.72, crownB, -d * 0.72))
+  const crownB3 = addVertex(new THREE.Vector3(-w * 0.72, crownB, d * 0.72))
+
+  const crownC0 = addVertex(new THREE.Vector3(w * 0.86, crownC, d * 0.86))
+  const crownC1 = addVertex(new THREE.Vector3(w * 0.86, crownC, -d * 0.86))
+  const crownC2 = addVertex(new THREE.Vector3(-w * 0.86, crownC, -d * 0.86))
+  const crownC3 = addVertex(new THREE.Vector3(-w * 0.86, crownC, d * 0.86))
+
+  const crownD0 = addVertex(new THREE.Vector3(w, crownD, d))
+  const crownD1 = addVertex(new THREE.Vector3(w, crownD, -d))
+  const crownD2 = addVertex(new THREE.Vector3(-w, crownD, -d))
+  const crownD3 = addVertex(new THREE.Vector3(-w, crownD, d))
+
+  const girdle0 = addVertex(new THREE.Vector3(w * 1.02, girdle, d * 1.02))
+  const girdle1 = addVertex(new THREE.Vector3(w * 1.02, girdle, -d * 1.02))
+  const girdle2 = addVertex(new THREE.Vector3(-w * 1.02, girdle, -d * 1.02))
+  const girdle3 = addVertex(new THREE.Vector3(-w * 1.02, girdle, d * 1.02))
+
+  const p1_0 = addVertex(new THREE.Vector3(w * 0.94, pavilion1, d * 0.94))
+  const p1_1 = addVertex(new THREE.Vector3(w * 0.94, pavilion1, -d * 0.94))
+  const p1_2 = addVertex(new THREE.Vector3(-w * 0.94, pavilion1, -d * 0.94))
+  const p1_3 = addVertex(new THREE.Vector3(-w * 0.94, pavilion1, d * 0.94))
+
+  const p2_0 = addVertex(new THREE.Vector3(w * 0.68, pavilion2, d * 0.68))
+  const p2_1 = addVertex(new THREE.Vector3(w * 0.68, pavilion2, -d * 0.68))
+  const p2_2 = addVertex(new THREE.Vector3(-w * 0.68, pavilion2, -d * 0.68))
+  const p2_3 = addVertex(new THREE.Vector3(-w * 0.68, pavilion2, d * 0.68))
+
+  const p3_0 = addVertex(new THREE.Vector3(w * 0.38, pavilion3, d * 0.38))
+  const p3_1 = addVertex(new THREE.Vector3(w * 0.38, pavilion3, -d * 0.38))
+  const p3_2 = addVertex(new THREE.Vector3(-w * 0.38, pavilion3, -d * 0.38))
+  const p3_3 = addVertex(new THREE.Vector3(-w * 0.38, pavilion3, d * 0.38))
+
+  const culetV = addVertex(new THREE.Vector3(0, culet, 0))
+
+  addTri(tableV[0], tableV[1], tableV[2])
+  addTri(tableV[0], tableV[2], tableV[3])
+  addTri(tableV[0], tableV[3], tableV[4])
+  addTri(tableV[0], tableV[4], tableV[1])
+
+  addTri(tableV[1], crownA0, tableV[2])
+  addTri(tableV[2], crownA1, tableV[3])
+  addTri(tableV[3], crownA2, tableV[4])
+  addTri(tableV[4], crownA3, tableV[1])
+
+  addTri(tableV[1], crownA1, crownA0)
+  addTri(tableV[1], crownA3, crownA3)
+  addTri(tableV[2], crownA1, crownA0)
+  addTri(tableV[2], crownA2, crownA1)
+  addTri(tableV[3], crownA2, crownA1)
+  addTri(tableV[3], crownA3, crownA2)
+  addTri(tableV[4], crownA3, crownA0)
+  addTri(tableV[4], crownA0, crownA3)
+
+  addTri(crownA0, crownB0, crownA1)
+  addTri(crownA1, crownB1, crownA2)
+  addTri(crownA2, crownB2, crownA3)
+  addTri(crownA3, crownB3, crownA0)
+
+  addTri(crownB0, crownC0, crownB1)
+  addTri(crownB1, crownC1, crownB2)
+  addTri(crownB2, crownC2, crownB3)
+  addTri(crownB3, crownC3, crownB0)
+
+  addTri(crownC0, crownD0, crownC1)
+  addTri(crownC1, crownD1, crownC2)
+  addTri(crownC2, crownD2, crownC3)
+  addTri(crownC3, crownD3, crownC0)
+
+  addTri(crownD0, girdle0, crownD1)
+  addTri(crownD1, girdle1, crownD2)
+  addTri(crownD2, girdle2, crownD3)
+  addTri(crownD3, girdle3, crownD0)
+
+  addTri(girdle0, p1_0, girdle1)
+  addTri(girdle1, p1_1, girdle2)
+  addTri(girdle2, p1_2, girdle3)
+  addTri(girdle3, p1_3, girdle0)
+
+  addTri(p1_0, p2_0, p1_1)
+  addTri(p1_1, p2_1, p1_2)
+  addTri(p1_2, p2_2, p1_3)
+  addTri(p1_3, p2_3, p1_0)
+
+  addTri(p2_0, p3_0, p2_1)
+  addTri(p2_1, p3_1, p2_2)
+  addTri(p2_2, p3_2, p2_3)
+  addTri(p2_3, p3_3, p2_0)
+
+  addTri(p3_0, culetV, p3_1)
+  addTri(p3_1, culetV, p3_2)
+  addTri(p3_2, culetV, p3_3)
+  addTri(p3_3, culetV, p3_0)
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setFromPoints(vertices)
+  geometry.setIndex(indices)
+
+  const faceted = geometry.toNonIndexed()
+  faceted.computeVertexNormals()
+  return faceted
 }
 
-function buildHeartCutGeometry() {
-  const shape = new THREE.Shape()
-  shape.moveTo(0, -0.60)
-  shape.bezierCurveTo(-0.72, -0.18, -0.88, 0.36, -0.24, 0.78)
-  shape.bezierCurveTo(-0.02, 0.92, 0, 0.96, 0, 0.88)
-  shape.bezierCurveTo(0, 0.96, 0.02, 0.92, 0.24, 0.78)
-  shape.bezierCurveTo(0.88, 0.36, 0.72, -0.18, 0, -0.60)
+function buildHeartCutGeometry(): THREE.BufferGeometry {
+  const vertices: THREE.Vector3[] = []
+  const indices: number[] = []
 
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.24,
-    bevelEnabled: true,
-    bevelSize: 0.10,
-    bevelThickness: 0.16,
-    bevelSegments: 1,
-    steps: 1,
-  }).toNonIndexed()
+  const addVertex = (vertex: THREE.Vector3) => {
+    vertices.push(vertex)
+    return vertices.length - 1
+  }
 
-  geometry.center()
-  geometry.rotateX(Math.PI / 2)
-  geometry.scale(0.72, 0.72, 0.72)
-  geometry.computeVertexNormals()
-  return geometry
+  const addTri = (a: number, b: number, c: number) => {
+    indices.push(a, b, c)
+  }
+
+  const crownT = 0.56
+  const crownUpper = 0.48
+  const crownMid = 0.38
+  const crownLower = 0.26
+  const girdle = 0.02
+  const pavilion1 = -0.20
+  const pavilion2 = -0.40
+  const pavilion3 = -0.56
+  const pavilion4 = -0.68
+  const culet = -0.72
+
+  const table = addVertex(new THREE.Vector3(0, crownT, 0))
+
+  const tableL = addVertex(new THREE.Vector3(-0.10, crownT, 0.12))
+  const tableR = addVertex(new THREE.Vector3(0.10, crownT, 0.12))
+
+  const crownUpperL1 = addVertex(new THREE.Vector3(-0.18, crownUpper, 0.20))
+  const crownUpperL2 = addVertex(new THREE.Vector3(-0.06, crownUpper, 0.26))
+  const crownUpperR1 = addVertex(new THREE.Vector3(0.06, crownUpper, 0.26))
+  const crownUpperR2 = addVertex(new THREE.Vector3(0.18, crownUpper, 0.20))
+
+  const crownMidL1 = addVertex(new THREE.Vector3(-0.30, crownMid, 0.28))
+  const crownMidL2 = addVertex(new THREE.Vector3(-0.14, crownMid, 0.38))
+  const crownMidR1 = addVertex(new THREE.Vector3(0.14, crownMid, 0.38))
+  const crownMidR2 = addVertex(new THREE.Vector3(0.30, crownMid, 0.28))
+
+  const crownLowerL1 = addVertex(new THREE.Vector3(-0.42, crownLower, 0.32))
+  const crownLowerL2 = addVertex(new THREE.Vector3(-0.22, crownLower, 0.46))
+  const crownLowerR1 = addVertex(new THREE.Vector3(0.22, crownLower, 0.46))
+  const crownLowerR2 = addVertex(new THREE.Vector3(0.42, crownLower, 0.32))
+
+  const girdleL1 = addVertex(new THREE.Vector3(-0.50, girdle, 0.34))
+  const girdleL2 = addVertex(new THREE.Vector3(-0.30, girdle, 0.52))
+  const girdleR1 = addVertex(new THREE.Vector3(0.30, girdle, 0.52))
+  const girdleR2 = addVertex(new THREE.Vector3(0.50, girdle, 0.34))
+  const girdleBottom = addVertex(new THREE.Vector3(0, girdle, -0.56))
+
+  const p1L1 = addVertex(new THREE.Vector3(-0.46, pavilion1, 0.30))
+  const p1L2 = addVertex(new THREE.Vector3(-0.28, pavilion1, 0.46))
+  const p1R1 = addVertex(new THREE.Vector3(0.28, pavilion1, 0.46))
+  const p1R2 = addVertex(new THREE.Vector3(0.46, pavilion1, 0.30))
+  const p1Bottom = addVertex(new THREE.Vector3(0, pavilion1, -0.50))
+
+  const p2L1 = addVertex(new THREE.Vector3(-0.38, pavilion2, 0.24))
+  const p2L2 = addVertex(new THREE.Vector3(-0.22, pavilion2, 0.38))
+  const p2R1 = addVertex(new THREE.Vector3(0.22, pavilion2, 0.38))
+  const p2R2 = addVertex(new THREE.Vector3(0.38, pavilion2, 0.24))
+  const p2Bottom = addVertex(new THREE.Vector3(0, pavilion2, -0.42))
+
+  const p3L1 = addVertex(new THREE.Vector3(-0.28, pavilion3, 0.18))
+  const p3L2 = addVertex(new THREE.Vector3(-0.16, pavilion3, 0.28))
+  const p3R1 = addVertex(new THREE.Vector3(0.16, pavilion3, 0.28))
+  const p3R2 = addVertex(new THREE.Vector3(0.28, pavilion3, 0.18))
+  const p3Bottom = addVertex(new THREE.Vector3(0, pavilion3, -0.32))
+
+  const p4L1 = addVertex(new THREE.Vector3(-0.18, pavilion4, 0.12))
+  const p4L2 = addVertex(new THREE.Vector3(-0.10, pavilion4, 0.18))
+  const p4R1 = addVertex(new THREE.Vector3(0.10, pavilion4, 0.18))
+  const p4R2 = addVertex(new THREE.Vector3(0.18, pavilion4, 0.12))
+  const p4Bottom = addVertex(new THREE.Vector3(0, pavilion4, -0.20))
+
+  const culetV = addVertex(new THREE.Vector3(0, culet, 0))
+
+  addTri(table, tableL, tableR)
+
+  addTri(tableL, crownUpperL1, tableR)
+  addTri(tableR, crownUpperR1, crownUpperR2)
+  addTri(tableR, crownUpperR2, crownUpperL2)
+  addTri(tableL, crownUpperL2, crownUpperL1)
+
+  addTri(crownUpperL1, crownMidL1, crownUpperL2)
+  addTri(crownUpperL2, crownMidL2, crownUpperR1)
+  addTri(crownUpperR1, crownMidR1, crownUpperR2)
+  addTri(crownUpperR2, crownMidR2, crownUpperL1)
+
+  addTri(crownMidL1, crownLowerL1, crownMidL2)
+  addTri(crownMidL2, crownLowerL2, crownMidR1)
+  addTri(crownMidR1, crownLowerR1, crownMidR2)
+  addTri(crownMidR2, crownLowerR2, crownMidL1)
+
+  addTri(crownLowerL1, girdleL1, crownLowerL2)
+  addTri(crownLowerL2, girdleL2, crownLowerR1)
+  addTri(crownLowerR1, girdleR1, crownLowerR2)
+  addTri(crownLowerR2, girdleR2, crownLowerL1)
+
+  addTri(girdleL1, p1L1, girdleL2)
+  addTri(girdleL2, p1L2, girdleR1)
+  addTri(girdleR1, p1R1, girdleR2)
+  addTri(girdleR2, p1R2, girdleL1)
+  addTri(girdleBottom, p1Bottom, girdleL1)
+  addTri(girdleR2, p1Bottom, girdleBottom)
+
+  addTri(p1L1, p2L1, p1L2)
+  addTri(p1L2, p2L2, p1R1)
+  addTri(p1R1, p2R1, p1R2)
+  addTri(p1R2, p2R2, p1L1)
+  addTri(p1Bottom, p2Bottom, p1L1)
+  addTri(p1R2, p2Bottom, p1Bottom)
+
+  addTri(p2L1, p3L1, p2L2)
+  addTri(p2L2, p3L2, p2R1)
+  addTri(p2R1, p3R1, p2R2)
+  addTri(p2R2, p3R2, p2L1)
+  addTri(p2Bottom, p3Bottom, p2L1)
+  addTri(p2R2, p3Bottom, p2Bottom)
+
+  addTri(p3L1, p4L1, p3L2)
+  addTri(p3L2, p4L2, p3R1)
+  addTri(p3R1, p4R1, p3R2)
+  addTri(p3R2, p4R2, p3L1)
+  addTri(p3Bottom, p4Bottom, p3L1)
+  addTri(p3R2, p4Bottom, p3Bottom)
+
+  addTri(p4L1, culetV, p4L2)
+  addTri(p4L2, culetV, p4R1)
+  addTri(p4R1, culetV, p4R2)
+  addTri(p4R2, culetV, p4L1)
+  addTri(p4Bottom, culetV, p4L1)
+  addTri(p4R2, culetV, p4Bottom)
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setFromPoints(vertices)
+  geometry.setIndex(indices)
+
+  const faceted = geometry.toNonIndexed()
+  faceted.computeVertexNormals()
+  return faceted
 }
 
 function buildCutGeometry(cut: GemCut) {
@@ -487,13 +848,13 @@ function buildCutGeometry(cut: GemCut) {
     case 'oval':
       return buildLatheCut([
         [0, -0.86],
-        [0.07, -0.74],
-        [0.40, -0.08],
-        [0.48, 0.02],
-        [0.40, 0.18],
-        [0.22, 0.34],
-        [0, 0.40],
-      ], 10, [1.24, 1, 0.92])
+        [0.06, -0.74],
+        [0.38, -0.12],
+        [0.50, 0.02],
+        [0.44, 0.18],
+        [0.24, 0.34],
+        [0, 0.42],
+      ], 16, [1.36, 1, 0.88])
     case 'emerald':
       return buildEmeraldCutGeometry()
     case 'heart':
