@@ -22,6 +22,8 @@ export type GemCut =
 
 export type GemBadgeRenderMode = 'auto' | 'webgl' | 'dom'
 
+export type GemView = 'top' | 'front'
+
 export interface GemBadgeConfig {
   /** Badge size in CSS pixels */
   size?: number
@@ -31,6 +33,10 @@ export interface GemBadgeConfig {
   cut?: GemCut
   /** Preferred renderer */
   renderMode?: GemBadgeRenderMode
+  /** View angle: top or front */
+  view?: GemView
+  /** Rotation angle in degrees (multiples of 45) */
+  rotation?: number
   /** Enables the outer glow */
   glow?: boolean
   /** Multiplies the glow intensity */

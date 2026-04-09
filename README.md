@@ -71,6 +71,8 @@ A standalone WebGL gem badge rendered as an `<span>`. Accepts a single `config` 
 | `material` | `GemMaterial` | `'diamond'` | Stone preset |
 | `cut` | `GemCut` | `'round'` | Facet cut shape |
 | `size` | `number` | `72` | Size in CSS pixels |
+| `view` | `GemView` | `'top'` | View angle (`'top'` \| `'front'`) |
+| `rotation` | `number` | `0` | Rotation in degrees (0-360) |
 | `glow` | `boolean` | `true` | Outer halo glow |
 | `glowIntensity` | `number` | `1` | Glow multiplier (try 0.3 – 3) |
 | `animate` | `boolean` | `false` | Subtle internal light animation |
@@ -159,6 +161,13 @@ All accept `GemButtonProps` minus `gem`.
 | `'auto'` | WebGL when available, DOM fallback otherwise |
 | `'webgl'` | Force WebGL (fails silently if unsupported) |
 | `'dom'` | Always use CSS/DOM fallback |
+
+### `GemView`
+
+| Value | Behavior |
+|---|---|
+| `'top'` | View from above (default) |
+| `'front'` | View from the front |
 
 ---
 

@@ -10,9 +10,15 @@ const DEFAULT_CONFIG: Required<GemBadgeConfig> = {
   material: 'diamond',
   cut: 'round',
   renderMode: 'auto',
+  view: 'top',
+  rotation: 0,
   glow: true,
   glowIntensity: 1,
   animate: false,
+}
+
+interface WebGLController {
+  setRotation: (rotation: number) => void
 }
 
 export function GemBadge({
@@ -32,12 +38,13 @@ export function GemBadge({
   const rootRef = useRef<HTMLSpanElement>(null)
   const [hovered, setHovered] = useState(false)
   const disabled = rest['aria-disabled'] === true
+  const webglRef = useRef<WebGLController | null>(null)
 
   useEffect(() => {
     const container = rootRef.current
     if (!container) return
 
-    return mountGemBadgeWebGL(container, {
+    const controller = mountGemBadgeWebGL(container, {
       material: resolved.material,
       cut: resolved.cut,
       glow: resolved.glow,
@@ -45,7 +52,12 @@ export function GemBadge({
       animate: resolved.animate,
       force2d: resolved.renderMode === 'dom',
       disabled,
+      view: resolved.view,
+      rotation: resolved.rotation,
     })
+    webglRef.current = controller
+
+    return controller.cleanup
   }, [
     disabled,
     resolved.animate,
@@ -54,7 +66,12 @@ export function GemBadge({
     resolved.glowIntensity,
     resolved.material,
     resolved.renderMode,
+    resolved.view,
   ])
+
+  useEffect(() => {
+    webglRef.current?.setRotation(resolved.rotation)
+  }, [resolved.rotation])
 
   const interactive = typeof onClick === 'function'
   const computedRole = role ?? (interactive ? 'button' : undefined)

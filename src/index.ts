@@ -9,6 +9,7 @@ export type {
   GemMaterial,
   GemType,
   GemSize,
+  GemView,
 } from './types'
 
 import React from 'react'

@@ -2,12 +2,22 @@ import * as THREE from 'three'
 import { GEM_BADGE_MATERIALS } from '../gem-badge-configs'
 import type { GemBadgeConfig, GemCut, GemMaterial } from '../types'
 
-interface GemBadgeWebGLOptions extends Required<Pick<GemBadgeConfig, 'animate' | 'cut' | 'glow' | 'glowIntensity'>> {
+interface GemBadgeWebGLOptions extends Required<Pick<GemBadgeConfig, 'animate' | 'cut' | 'glow' | 'glowIntensity' | 'view' | 'rotation'>> {
   material: GemMaterial
   disabled?: boolean
   force2d?: boolean
   targetElement?: HTMLElement | null
   onContextLost?: () => void
+}
+
+interface WebGLCoreController {
+  dispose: () => void
+  setRotation: (rotation: number) => void
+}
+
+interface GemBadgeWebGLController {
+  cleanup: () => void
+  setRotation: (rotation: number) => void
 }
 
 interface PreparedGeometry {
@@ -27,15 +37,36 @@ attribute vec3 aPosition;
 attribute vec3 aNormal;
 
 uniform float uScale;
+uniform int uView;
+uniform float uRotation;
 
 varying vec3 vPosition;
 varying vec3 vNormal;
 
+mat3 rotateY(float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return mat3(
+    c, 0.0, -s,
+    0.0, 1.0, 0.0,
+    s, 0.0, c
+  );
+}
+
 void main() {
-  vec3 position = aPosition * uScale;
+  float angle = uRotation * 3.14159265 / 180.0;
+  vec3 rotatedPos = rotateY(angle) * aPosition;
+  vec3 rotatedNormal = rotateY(angle) * aNormal;
+  
+  vec3 position = rotatedPos * uScale;
   vPosition = position;
-  vNormal = normalize(aNormal);
-  gl_Position = vec4(position.x, -position.z, 0.0, 1.0);
+  vNormal = normalize(rotatedNormal);
+  
+  if (uView == 0) {
+    gl_Position = vec4(position.x, -position.z, 0.0, 1.0);
+  } else {
+    gl_Position = vec4(position.x, position.y, 0.0, 1.0);
+  }
 }
 `
 
@@ -696,6 +727,48 @@ function buildEmeraldCutGeometry(): THREE.BufferGeometry {
   return faceted
 }
 
+// Robert H. Long, 10.018 "Highlight Heart 72"
+// Reference proportions: L/W = 1.005, H/W = 0.631.
+const HEART_OUTLINE: ReadonlyArray<readonly [number, number]> = [
+  [0.00, 0.37],
+  [0.15, 0.49],
+  [0.36, 0.42],
+  [0.50, 0.18],
+  [0.44, -0.10],
+  [0.22, -0.34],
+  [0.00, -0.515],
+  [-0.22, -0.34],
+  [-0.44, -0.10],
+  [-0.50, 0.18],
+  [-0.36, 0.42],
+  [-0.15, 0.49],
+]
+
+interface HeartRingSpec {
+  y: number
+  xScale: number
+  zScale: number
+  zBias: number
+}
+
+function traceHeartPath(context: CanvasRenderingContext2D, radius: number) {
+  const scale = radius * 2
+
+  context.beginPath()
+  HEART_OUTLINE.forEach(([x, z], index) => {
+    const pathX = x * scale
+    const pathY = -z * scale
+
+    if (index === 0) {
+      context.moveTo(pathX, pathY)
+      return
+    }
+
+    context.lineTo(pathX, pathY)
+  })
+  context.closePath()
+}
+
 function buildHeartCutGeometry(): THREE.BufferGeometry {
   const vertices: THREE.Vector3[] = []
   const indices: number[] = []
@@ -705,129 +778,71 @@ function buildHeartCutGeometry(): THREE.BufferGeometry {
     return vertices.length - 1
   }
 
+  const interiorPoint = new THREE.Vector3(0, -0.10, -0.02)
+  const faceAB = new THREE.Vector3()
+  const faceAC = new THREE.Vector3()
+  const faceNormal = new THREE.Vector3()
+  const faceCentroid = new THREE.Vector3()
+  const toInterior = new THREE.Vector3()
+
   const addTri = (a: number, b: number, c: number) => {
+    const va = vertices[a]
+    const vb = vertices[b]
+    const vc = vertices[c]
+
+    faceAB.subVectors(vb, va)
+    faceAC.subVectors(vc, va)
+    faceNormal.crossVectors(faceAB, faceAC)
+    faceCentroid.copy(va).add(vb).add(vc).multiplyScalar(1 / 3)
+    toInterior.subVectors(interiorPoint, faceCentroid)
+
+    if (faceNormal.dot(toInterior) > 0) {
+      indices.push(a, c, b)
+      return
+    }
+
     indices.push(a, b, c)
   }
 
-  const crownT = 0.56
-  const crownUpper = 0.48
-  const crownMid = 0.38
-  const crownLower = 0.26
-  const girdle = 0.02
-  const pavilion1 = -0.20
-  const pavilion2 = -0.40
-  const pavilion3 = -0.56
-  const pavilion4 = -0.68
-  const culet = -0.72
+  const addRing = ({ y, xScale, zScale, zBias }: HeartRingSpec) => HEART_OUTLINE.map(([x, z]) => (
+    addVertex(new THREE.Vector3(x * xScale, y, z * zScale + zBias))
+  ))
 
-  const table = addVertex(new THREE.Vector3(0, crownT, 0))
+  const bridgeRings = (upper: number[], lower: number[]) => {
+    const segments = upper.length
 
-  const tableL = addVertex(new THREE.Vector3(-0.10, crownT, 0.12))
-  const tableR = addVertex(new THREE.Vector3(0.10, crownT, 0.12))
+    for (let index = 0; index < segments; index += 1) {
+      const next = (index + 1) % segments
+      addTri(upper[index], lower[index], lower[next])
+      addTri(upper[index], lower[next], upper[next])
+    }
+  }
 
-  const crownUpperL1 = addVertex(new THREE.Vector3(-0.18, crownUpper, 0.20))
-  const crownUpperL2 = addVertex(new THREE.Vector3(-0.06, crownUpper, 0.26))
-  const crownUpperR1 = addVertex(new THREE.Vector3(0.06, crownUpper, 0.26))
-  const crownUpperR2 = addVertex(new THREE.Vector3(0.18, crownUpper, 0.20))
+  const fillRing = (center: number, ring: number[]) => {
+    for (let index = 0; index < ring.length; index += 1) {
+      const next = (index + 1) % ring.length
+      addTri(center, ring[index], ring[next])
+    }
+  }
 
-  const crownMidL1 = addVertex(new THREE.Vector3(-0.30, crownMid, 0.28))
-  const crownMidL2 = addVertex(new THREE.Vector3(-0.14, crownMid, 0.38))
-  const crownMidR1 = addVertex(new THREE.Vector3(0.14, crownMid, 0.38))
-  const crownMidR2 = addVertex(new THREE.Vector3(0.30, crownMid, 0.28))
+  const tableCenter = addVertex(new THREE.Vector3(0, 0.185, 0.09))
+  const tableRing = addRing({ y: 0.185, xScale: 0.36, zScale: 0.36, zBias: 0.09 })
+  const crownRing = addRing({ y: 0.085, xScale: 0.74, zScale: 0.74, zBias: 0.03 })
+  const girdleTopRing = addRing({ y: 0.01, xScale: 1.0, zScale: 1.0, zBias: 0.0 })
+  const girdleBottomRing = addRing({ y: -0.01, xScale: 1.0, zScale: 1.0, zBias: 0.0 })
+  const pavilionRing = addRing({ y: -0.24, xScale: 0.42, zScale: 0.48, zBias: -0.10 })
+  const culet = addVertex(new THREE.Vector3(0, -0.446, -0.18))
 
-  const crownLowerL1 = addVertex(new THREE.Vector3(-0.42, crownLower, 0.32))
-  const crownLowerL2 = addVertex(new THREE.Vector3(-0.22, crownLower, 0.46))
-  const crownLowerR1 = addVertex(new THREE.Vector3(0.22, crownLower, 0.46))
-  const crownLowerR2 = addVertex(new THREE.Vector3(0.42, crownLower, 0.32))
+  fillRing(tableCenter, tableRing)
+  bridgeRings(tableRing, crownRing)
+  bridgeRings(crownRing, girdleTopRing)
+  bridgeRings(girdleTopRing, girdleBottomRing)
+  bridgeRings(girdleBottomRing, pavilionRing)
 
-  const girdleL1 = addVertex(new THREE.Vector3(-0.50, girdle, 0.34))
-  const girdleL2 = addVertex(new THREE.Vector3(-0.30, girdle, 0.52))
-  const girdleR1 = addVertex(new THREE.Vector3(0.30, girdle, 0.52))
-  const girdleR2 = addVertex(new THREE.Vector3(0.50, girdle, 0.34))
-  const girdleBottom = addVertex(new THREE.Vector3(0, girdle, -0.56))
-
-  const p1L1 = addVertex(new THREE.Vector3(-0.46, pavilion1, 0.30))
-  const p1L2 = addVertex(new THREE.Vector3(-0.28, pavilion1, 0.46))
-  const p1R1 = addVertex(new THREE.Vector3(0.28, pavilion1, 0.46))
-  const p1R2 = addVertex(new THREE.Vector3(0.46, pavilion1, 0.30))
-  const p1Bottom = addVertex(new THREE.Vector3(0, pavilion1, -0.50))
-
-  const p2L1 = addVertex(new THREE.Vector3(-0.38, pavilion2, 0.24))
-  const p2L2 = addVertex(new THREE.Vector3(-0.22, pavilion2, 0.38))
-  const p2R1 = addVertex(new THREE.Vector3(0.22, pavilion2, 0.38))
-  const p2R2 = addVertex(new THREE.Vector3(0.38, pavilion2, 0.24))
-  const p2Bottom = addVertex(new THREE.Vector3(0, pavilion2, -0.42))
-
-  const p3L1 = addVertex(new THREE.Vector3(-0.28, pavilion3, 0.18))
-  const p3L2 = addVertex(new THREE.Vector3(-0.16, pavilion3, 0.28))
-  const p3R1 = addVertex(new THREE.Vector3(0.16, pavilion3, 0.28))
-  const p3R2 = addVertex(new THREE.Vector3(0.28, pavilion3, 0.18))
-  const p3Bottom = addVertex(new THREE.Vector3(0, pavilion3, -0.32))
-
-  const p4L1 = addVertex(new THREE.Vector3(-0.18, pavilion4, 0.12))
-  const p4L2 = addVertex(new THREE.Vector3(-0.10, pavilion4, 0.18))
-  const p4R1 = addVertex(new THREE.Vector3(0.10, pavilion4, 0.18))
-  const p4R2 = addVertex(new THREE.Vector3(0.18, pavilion4, 0.12))
-  const p4Bottom = addVertex(new THREE.Vector3(0, pavilion4, -0.20))
-
-  const culetV = addVertex(new THREE.Vector3(0, culet, 0))
-
-  addTri(table, tableL, tableR)
-
-  addTri(tableL, crownUpperL1, tableR)
-  addTri(tableR, crownUpperR1, crownUpperR2)
-  addTri(tableR, crownUpperR2, crownUpperL2)
-  addTri(tableL, crownUpperL2, crownUpperL1)
-
-  addTri(crownUpperL1, crownMidL1, crownUpperL2)
-  addTri(crownUpperL2, crownMidL2, crownUpperR1)
-  addTri(crownUpperR1, crownMidR1, crownUpperR2)
-  addTri(crownUpperR2, crownMidR2, crownUpperL1)
-
-  addTri(crownMidL1, crownLowerL1, crownMidL2)
-  addTri(crownMidL2, crownLowerL2, crownMidR1)
-  addTri(crownMidR1, crownLowerR1, crownMidR2)
-  addTri(crownMidR2, crownLowerR2, crownMidL1)
-
-  addTri(crownLowerL1, girdleL1, crownLowerL2)
-  addTri(crownLowerL2, girdleL2, crownLowerR1)
-  addTri(crownLowerR1, girdleR1, crownLowerR2)
-  addTri(crownLowerR2, girdleR2, crownLowerL1)
-
-  addTri(girdleL1, p1L1, girdleL2)
-  addTri(girdleL2, p1L2, girdleR1)
-  addTri(girdleR1, p1R1, girdleR2)
-  addTri(girdleR2, p1R2, girdleL1)
-  addTri(girdleBottom, p1Bottom, girdleL1)
-  addTri(girdleR2, p1Bottom, girdleBottom)
-
-  addTri(p1L1, p2L1, p1L2)
-  addTri(p1L2, p2L2, p1R1)
-  addTri(p1R1, p2R1, p1R2)
-  addTri(p1R2, p2R2, p1L1)
-  addTri(p1Bottom, p2Bottom, p1L1)
-  addTri(p1R2, p2Bottom, p1Bottom)
-
-  addTri(p2L1, p3L1, p2L2)
-  addTri(p2L2, p3L2, p2R1)
-  addTri(p2R1, p3R1, p2R2)
-  addTri(p2R2, p3R2, p2L1)
-  addTri(p2Bottom, p3Bottom, p2L1)
-  addTri(p2R2, p3Bottom, p2Bottom)
-
-  addTri(p3L1, p4L1, p3L2)
-  addTri(p3L2, p4L2, p3R1)
-  addTri(p3R1, p4R1, p3R2)
-  addTri(p3R2, p4R2, p3L1)
-  addTri(p3Bottom, p4Bottom, p3L1)
-  addTri(p3R2, p4Bottom, p3Bottom)
-
-  addTri(p4L1, culetV, p4L2)
-  addTri(p4L2, culetV, p4R1)
-  addTri(p4R1, culetV, p4R2)
-  addTri(p4R2, culetV, p4L1)
-  addTri(p4Bottom, culetV, p4L1)
-  addTri(p4R2, culetV, p4Bottom)
+  for (let index = 0; index < pavilionRing.length; index += 1) {
+    const next = (index + 1) % pavilionRing.length
+    addTri(pavilionRing[index], culet, pavilionRing[next])
+  }
 
   const geometry = new THREE.BufferGeometry()
   geometry.setFromPoints(vertices)
@@ -1029,13 +1044,7 @@ function drawFallback(canvas: HTMLCanvasElement, options: GemBadgeWebGLOptions) 
     context.closePath()
     break
   case 'heart':
-    context.beginPath()
-    context.moveTo(0, radius)
-    context.bezierCurveTo(-radius * 1.1, radius * 0.42, -radius * 1.15, -radius * 0.30, -radius * 0.35, -radius * 0.76)
-    context.bezierCurveTo(-radius * 0.08, -radius * 0.94, 0, -radius * 0.82, 0, -radius * 0.62)
-    context.bezierCurveTo(0, -radius * 0.82, radius * 0.08, -radius * 0.94, radius * 0.35, -radius * 0.76)
-    context.bezierCurveTo(radius * 1.15, -radius * 0.30, radius * 1.1, radius * 0.42, 0, radius)
-    context.closePath()
+    traceHeartPath(context, radius)
     break
   case 'marquise':
     context.beginPath()
@@ -1063,7 +1072,7 @@ function drawFallback(canvas: HTMLCanvasElement, options: GemBadgeWebGLOptions) 
 function mountWebGLCore(
   canvas: HTMLCanvasElement,
   options: GemBadgeWebGLOptions
-): (() => void) | null {
+): WebGLCoreController | null {
   const geometry = getPreparedGeometry(options.cut)
   const gl = geometry
     ? canvas.getContext('webgl', {
@@ -1112,6 +1121,8 @@ function mountWebGLCore(
   const uGlowStrength = gl.getUniformLocation(program, 'uGlowStrength')
   const uHover = gl.getUniformLocation(program, 'uHover')
   const uTime = gl.getUniformLocation(program, 'uTime')
+  const uView = gl.getUniformLocation(program, 'uView')
+  const uRotation = gl.getUniformLocation(program, 'uRotation')
 
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
   gl.enableVertexAttribArray(aPosition)
@@ -1208,6 +1219,8 @@ function mountWebGLCore(
     gl.uniform1f(uTime, time)
     gl.uniform1f(uHover, hover)
     gl.uniform1f(uGlowStrength, glowStrength)
+    gl.uniform1i(uView, options.view === 'front' ? 1 : 0)
+    gl.uniform1f(uRotation, options.rotation)
     gl.drawArrays(gl.TRIANGLES, 0, geometry.count)
 
     needsRender = hoverTarget !== 0 || options.animate
@@ -1236,20 +1249,26 @@ function mountWebGLCore(
 
   rafId = window.requestAnimationFrame(render)
 
-  return () => {
-    disposed = true
-    window.cancelAnimationFrame(rafId)
-    canvas.removeEventListener('webglcontextlost', onContextLost)
-    resizeObserver?.disconnect()
-    window.removeEventListener('resize', resize)
-    target?.removeEventListener('mouseenter', onEnter)
-    target?.removeEventListener('mouseleave', onLeave)
-    target?.removeEventListener('focus', onEnter)
-    target?.removeEventListener('blur', onLeave)
-    gl.deleteBuffer(positionBuffer)
-    gl.deleteBuffer(normalBuffer)
-    gl.deleteProgram(program)
-    gl.getExtension('WEBGL_lose_context')?.loseContext()
+  return {
+    dispose: () => {
+      disposed = true
+      window.cancelAnimationFrame(rafId)
+      canvas.removeEventListener('webglcontextlost', onContextLost)
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', resize)
+      target?.removeEventListener('mouseenter', onEnter)
+      target?.removeEventListener('mouseleave', onLeave)
+      target?.removeEventListener('focus', onEnter)
+      target?.removeEventListener('blur', onLeave)
+      gl.deleteBuffer(positionBuffer)
+      gl.deleteBuffer(normalBuffer)
+      gl.deleteProgram(program)
+      gl.getExtension('WEBGL_lose_context')?.loseContext()
+    },
+    setRotation: (rotation: number) => {
+      options.rotation = rotation
+      needsRender = true
+    },
   }
 }
 
@@ -1270,7 +1289,7 @@ function makeOverlayCanvas(): HTMLCanvasElement {
 export function mountGemBadgeWebGL(
   container: HTMLElement,
   options: GemBadgeWebGLOptions
-): () => void {
+): GemBadgeWebGLController {
   // Create a 2D fallback canvas that is always present in the container
   const fallbackCanvas = makeOverlayCanvas()
   container.appendChild(fallbackCanvas)
@@ -1287,14 +1306,18 @@ export function mountGemBadgeWebGL(
 
   // DOM mode or unsupported cut: 2D only
   if (options.force2d || !getPreparedGeometry(options.cut)) {
-    return () => {
-      fallbackCanvas.remove()
+    return {
+      cleanup: () => {
+        fallbackCanvas.remove()
+      },
+      setRotation: () => {},
     }
   }
 
   let outerDisposed = false
   let webglCanvas: HTMLCanvasElement | null = null
   let webglCleanup: (() => void) | null = null
+  let webglCoreRef: WebGLCoreController | null = null
   let webglFailed = false
   let retryTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -1326,15 +1349,16 @@ export function mountGemBadgeWebGL(
       webglFailed = true
     }
 
-    const cleanup = mountWebGLCore(webglCanvas, { ...options, targetElement: container, onContextLost })
-    if (cleanup) {
+    const core = mountWebGLCore(webglCanvas, { ...options, targetElement: container, onContextLost })
+    if (core) {
       fallbackCanvas.style.opacity = '0'
       webglCleanup = () => {
-        cleanup()
+        core.dispose()
         webglCanvas?.remove()
         webglCanvas = null
         fallbackCanvas.style.opacity = '1'
       }
+      webglCoreRef = core
     } else {
       webglCanvas.remove()
       webglCanvas = null
@@ -1358,11 +1382,17 @@ export function mountGemBadgeWebGL(
 
   if (typeof IntersectionObserver === 'undefined') {
     activate()
-    return () => {
-      outerDisposed = true
-      if (debounceTimer) clearTimeout(debounceTimer)
-      webglCleanup?.()
-      fallbackCanvas.remove()
+    return {
+      cleanup: () => {
+        outerDisposed = true
+        if (debounceTimer) clearTimeout(debounceTimer)
+        webglCleanup?.()
+        fallbackCanvas.remove()
+      },
+      setRotation: (rotation: number) => {
+        options.rotation = rotation
+        webglCoreRef?.setRotation(rotation)
+      },
     }
   }
 
@@ -1372,12 +1402,18 @@ export function mountGemBadgeWebGL(
   )
   observer.observe(container)
 
-  return () => {
-    outerDisposed = true
-    if (debounceTimer) clearTimeout(debounceTimer)
-    if (retryTimer) clearTimeout(retryTimer)
-    observer.disconnect()
-    webglCleanup?.()
-    fallbackCanvas.remove()
+  return {
+    cleanup: () => {
+      outerDisposed = true
+      if (debounceTimer) clearTimeout(debounceTimer)
+      if (retryTimer) clearTimeout(retryTimer)
+      observer.disconnect()
+      webglCleanup?.()
+      fallbackCanvas.remove()
+    },
+    setRotation: (rotation: number) => {
+      options.rotation = rotation
+      webglCoreRef?.setRotation(rotation)
+    },
   }
 }

@@ -7,11 +7,12 @@ import {
   type GemBadgeRenderMode,
   type GemCut,
   type GemMaterial,
+  type GemView,
 } from '../../src'
 
 export type DiamondCut = GemCut
 export type GemBadgeStone = GemMaterial
-export type { GemBadgeRenderMode }
+export type { GemBadgeRenderMode, GemView }
 
 export interface GemBadgeProps extends Omit<LibraryGemBadgeProps, 'config'> {
   stone?: GemBadgeStone
@@ -21,6 +22,8 @@ export interface GemBadgeProps extends Omit<LibraryGemBadgeProps, 'config'> {
   glowIntensity?: number
   renderMode?: GemBadgeRenderMode
   animate?: boolean
+  view?: GemView
+  rotation?: number
 }
 
 export function GemBadge({
@@ -31,6 +34,8 @@ export function GemBadge({
   glowIntensity = 1,
   renderMode = 'auto',
   animate = false,
+  view = 'top',
+  rotation = 0,
   ...rest
 }: GemBadgeProps) {
   return (
@@ -43,6 +48,8 @@ export function GemBadge({
         glowIntensity,
         renderMode,
         animate,
+        view,
+        rotation,
       }}
       {...rest}
     />

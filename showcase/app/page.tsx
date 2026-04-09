@@ -6,6 +6,7 @@ import {
   type DiamondCut,
   type GemBadgeStone,
   type GemBadgeRenderMode,
+  type GemView,
 } from '../components/GemBadge'
 
 const ALL_BADGE_STONES: GemBadgeStone[] = ['diamond', 'ruby', 'emerald', 'sapphire', 'amethyst', 'topaz']
@@ -228,6 +229,8 @@ export default function Page() {
   const [selectedStone, setSelectedStone] = useState<GemBadgeStone>('diamond')
   const [selectedCut, setSelectedCut] = useState<DiamondCut>('round')
   const [selectedRenderMode, setSelectedRenderMode] = useState<GemBadgeRenderMode>('webgl')
+  const [selectedView, setSelectedView] = useState<GemView>('top')
+  const [selectedRotation, setSelectedRotation] = useState(0)
   const [glowEnabled, setGlowEnabled] = useState(true)
   const [glowIntensity, setGlowIntensity] = useState(0.28)
   const [activeTab, setActiveTab] = useState<string>('stones')
@@ -239,6 +242,7 @@ export default function Page() {
     { id: 'stones', label: 'All Stones' },
     { id: 'sizes', label: 'Sizes' },
     { id: 'cuts', label: 'Cuts' },
+    { id: 'view', label: 'View' },
     { id: 'glow', label: 'Glow' },
   ]
 
@@ -295,11 +299,38 @@ export default function Page() {
               ))}
             </div>
 
+            <div style={s.controlRow}>
+              {(['top', 'front'] as GemView[]).map(view => (
+                <TogglePill
+                  key={view}
+                  active={selectedView === view}
+                  onClick={() => setSelectedView(view as GemView)}
+                >
+                  {view}
+                </TogglePill>
+              ))}
+            </div>
+
+            <div style={{ ...s.center, gap: 10 }}>
+              <span style={s.controlLabel}>Rotation: {selectedRotation}°</span>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={selectedRotation}
+                onChange={(event) => setSelectedRotation(Number(event.target.value))}
+                style={s.slider}
+              />
+            </div>
+
             <div style={{ ...s.center, gap: 16 }}>
               <GemBadge
                 stone={selectedStone}
                 cut={selectedCut}
                 renderMode={selectedRenderMode}
+                view={selectedView}
+                rotation={selectedRotation}
                 size={124}
                 glow={glowEnabled}
                 glowIntensity={glowIntensity}
@@ -406,6 +437,32 @@ export default function Page() {
                       glowIntensity={glowIntensity}
                     />
                     <span style={s.badgeLabel}>{cut}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* View & Rotation */}
+          {activeTab === 'view' && (
+            <div>
+              <p style={{ ...s.badgeLabel, marginBottom: 16 }}>view angle</p>
+              <div style={{ ...s.row, justifyContent: 'center', marginBottom: 32 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} view="top" />
+                  <span style={s.badgeLabel}>top</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} view="front" />
+                  <span style={s.badgeLabel}>front</span>
+                </div>
+              </div>
+              <p style={{ ...s.badgeLabel, marginBottom: 16 }}>rotation angles</p>
+              <div style={{ ...s.row, justifyContent: 'center' }}>
+                {[0, 45, 90, 135, 180, 225, 270, 315].map(rot => (
+                  <div key={rot} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={72} rotation={rot} />
+                    <span style={s.badgeLabel}>{rot}°</span>
                   </div>
                 ))}
               </div>
