@@ -199,7 +199,7 @@ const ALL_CSS_GEMS: GemType[] = ['diamond', 'ruby', 'emerald', 'sapphire', 'amet
 
 export default function Page() {
   const [selectedStone, setSelectedStone] = useState<GemBadgeStone>('diamond')
-  const [selectedCut, setSelectedCut] = useState<DiamondCut>('princess')
+  const [selectedCut, setSelectedCut] = useState<DiamondCut>('round')
   const [glowEnabled, setGlowEnabled] = useState(true)
   const [glowIntensity, setGlowIntensity] = useState(0.28)
 

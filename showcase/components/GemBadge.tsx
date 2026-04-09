@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useMemo, useState, type CSSProperties } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { motion } from 'framer-motion'
 import * as THREE from 'three'
@@ -66,6 +66,21 @@ function makeMaskStyles(maskImage: string): CSSProperties {
   }
 }
 
+function makeConicFacetGradient(
+  colors: string[],
+  rotation = 0,
+  origin = '50% 50%'
+): string {
+  const step = 360 / colors.length
+  const stops = colors.map((color, index) => {
+    const start = (index * step).toFixed(2)
+    const end = ((index + 1) * step).toFixed(2)
+    return `${color} ${start}deg ${end}deg`
+  })
+
+  return `conic-gradient(from ${rotation}deg at ${origin}, ${stops.join(', ')})`
+}
+
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const normalized = hex.replace('#', '')
   const value = normalized.length === 3
@@ -110,20 +125,24 @@ function makeCutGemPalette(cfg: StoneConfig, stone: GemBadgeStone): CutGemPalett
   }
 }
 
+const ROUND_TABLE_MASK = makeSvgMask(
+  '<polygon fill="white" points="50,8 78,22 92,50 78,78 50,92 22,78 8,50 22,22" />'
+)
+
 const DIAMOND_CUTS: Record<DiamondCut, DiamondCutConfig> = {
   round: {
     label: 'Round',
     maskImage: makeSvgMask('<circle cx="50" cy="50" r="46" fill="white" />'),
     facetOverlay: [
-      'conic-gradient(from 210deg, transparent 0deg, rgba(190,225,255,0.18) 42deg, transparent 88deg, rgba(98,152,255,0.14) 160deg, transparent 210deg, rgba(255,255,255,0.14) 302deg, transparent 340deg)',
-      'linear-gradient(135deg, transparent 34%, rgba(180,220,255,0.10) 50%, transparent 66%)',
+      'conic-gradient(from 202deg, transparent 0deg, rgba(236,244,255,0.18) 30deg, transparent 54deg, rgba(122,136,160,0.12) 92deg, transparent 132deg, rgba(255,255,255,0.18) 172deg, transparent 214deg, rgba(215,228,244,0.12) 268deg, transparent 316deg, rgba(255,238,214,0.12) 340deg, transparent 360deg)',
+      'radial-gradient(circle at 50% 50%, transparent 0 24%, rgba(255,255,255,0.10) 24% 26%, transparent 26% 64%, rgba(214,228,245,0.10) 64% 66%, transparent 66%)',
     ].join(', '),
-    sheenOverlay: 'conic-gradient(from 220deg, rgba(255,255,255,0.00), rgba(140,186,255,0.18), rgba(255,255,255,0.00), rgba(88,230,255,0.16), rgba(255,255,255,0.00))',
-    coreInset: '14%',
-    mainGlow: { inset: '-10%' },
-    topHighlight: { width: '42%', height: '42%', top: '8%', left: '16%' },
-    bottomFlare: { width: '30%', height: '30%', right: '6%', bottom: '4%' },
-    sideGlow: { width: '18%', height: '18%', left: '18%', bottom: '18%' },
+    sheenOverlay: 'conic-gradient(from 212deg, rgba(255,255,255,0.00), rgba(196,214,236,0.16), rgba(255,255,255,0.00), rgba(255,232,208,0.14), rgba(255,255,255,0.00), rgba(188,236,255,0.12), rgba(255,255,255,0.00))',
+    coreInset: '18%',
+    mainGlow: { inset: '-8%' },
+    topHighlight: { width: '38%', height: '38%', top: '10%', left: '18%' },
+    bottomFlare: { width: '26%', height: '26%', right: '8%', bottom: '9%' },
+    sideGlow: { width: '16%', height: '16%', left: '18%', bottom: '20%' },
   },
   princess: {
     label: 'Princess',
@@ -220,13 +239,13 @@ interface StoneConfig {
 
 export const STONE_CONFIGS: Record<string, StoneConfig> = {
   diamond: {
-    gemColor:  '#c0dcff',
-    glowColor: '#2255ff',
-    halos:     [{ col: '#5588ff' }, { col: '#3366ff' }, { col: '#2255ee' }, { col: '#1144dd' }],
-    coreColor: '#020816',
+    gemColor:  '#f5f9ff',
+    glowColor: '#dce9f8',
+    halos:     [{ col: '#f6fbff' }, { col: '#dfe9f7' }, { col: '#bccbdd' }, { col: '#95a6bf' }],
+    coreColor: '#313847',
     keyLight:  '#ffffff',
-    fillLight: '#3366ff',
-    rimLight:  '#aaccff',
+    fillLight: '#e7eefb',
+    rimLight:  '#fff1d8',
     bgColor:   '#06101e',
     ringColor: 'rgba(70,130,255,',
     envPreset: 'dawn',
@@ -342,6 +361,96 @@ function buildPrincessCut(): THREE.BufferGeometry {
   const flat = geo.toNonIndexed()
   flat.computeVertexNormals()
   return flat
+}
+
+function buildFacetRing(
+  radius: number,
+  y: number,
+  count: number,
+  angleOffset = 0,
+  xScale = 1,
+  zScale = 1
+): THREE.Vector3[] {
+  return Array.from({ length: count }, (_, index) => {
+    const angle = (index / count) * Math.PI * 2 + angleOffset
+    return new THREE.Vector3(
+      Math.cos(angle) * radius * xScale,
+      y,
+      Math.sin(angle) * radius * zScale
+    )
+  })
+}
+
+function buildRoundBrilliantCut(): THREE.BufferGeometry {
+  const vertices: THREE.Vector3[] = []
+  const indices: number[] = []
+
+  const addVertex = (vertex: THREE.Vector3) => {
+    vertices.push(vertex)
+    return vertices.length - 1
+  }
+
+  const addRing = (
+    radius: number,
+    y: number,
+    count: number,
+    angleOffset = 0,
+    xScale = 1,
+    zScale = 1
+  ) => buildFacetRing(radius, y, count, angleOffset, xScale, zScale).map(addVertex)
+
+  const addTri = (a: number, b: number, c: number) => {
+    indices.push(a, b, c)
+  }
+
+  const topCenter = addVertex(new THREE.Vector3(0, 0.26, 0))
+  const table = addRing(0.30, 0.26, 8, 0, 0.98, 1)
+  const crown = addRing(0.46, 0.15, 8, Math.PI / 8, 0.99, 1)
+  const girdleUpper = addRing(0.64, 0.03, 16, 0, 1, 1.01)
+  const girdleLower = addRing(0.62, -0.035, 16, 0, 0.99, 1)
+  const pavilion = addRing(0.24, -0.34, 16, Math.PI / 16, 0.97, 1)
+  const culet = addVertex(new THREE.Vector3(0, -0.82, 0))
+
+  for (let index = 0; index < 8; index += 1) {
+    const next = (index + 1) % 8
+    addTri(topCenter, table[index], table[next])
+  }
+
+  for (let index = 0; index < 8; index += 1) {
+    const next = (index + 1) % 8
+    const girdleIndex = index * 2
+    const g0 = girdleUpper[girdleIndex]
+    const g1 = girdleUpper[(girdleIndex + 1) % 16]
+    const g2 = girdleUpper[(girdleIndex + 2) % 16]
+
+    addTri(table[index], crown[index], table[next])
+    addTri(table[index], g0, crown[index])
+    addTri(crown[index], g0, g1)
+    addTri(table[next], crown[index], g2)
+    addTri(crown[index], g1, g2)
+  }
+
+  for (let index = 0; index < 16; index += 1) {
+    const next = (index + 1) % 16
+    addTri(girdleUpper[index], girdleUpper[next], girdleLower[index])
+    addTri(girdleUpper[next], girdleLower[next], girdleLower[index])
+  }
+
+  for (let index = 0; index < 16; index += 1) {
+    const next = (index + 1) % 16
+    addTri(girdleLower[index], girdleLower[next], pavilion[index])
+    addTri(girdleLower[next], pavilion[next], pavilion[index])
+    addTri(pavilion[index], pavilion[next], culet)
+  }
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setFromPoints(vertices)
+  geometry.setIndex(indices)
+
+  const faceted = geometry.toNonIndexed()
+  faceted.computeVertexNormals()
+  faceted.scale(1, 1.04, 1)
+  return faceted
 }
 
 function DiamondOrb({
@@ -901,8 +1010,97 @@ function CutGemOrb({
   const cutConfig = DIAMOND_CUTS[cut]
   const maskStyles = makeMaskStyles(cutConfig.maskImage)
   const palette = makeCutGemPalette(cfg, stone)
+  const roundTableMaskStyles = makeMaskStyles(ROUND_TABLE_MASK)
   const rimGlow = 0.08 + glowAmount * (hovered ? 0.24 : 0.16)
   const halo = 0.10 + glowAmount * (hovered ? 0.34 : 0.18)
+  const isRoundDiamond = stone === 'diamond' && cut === 'round'
+  const shellBackground = isRoundDiamond
+    ? [
+        'radial-gradient(circle at 28% 22%, rgba(255,255,255,0.98) 0%, rgba(248,250,255,0.94) 11%, rgba(220,229,240,0.42) 22%, transparent 36%)',
+        'radial-gradient(circle at 78% 24%, rgba(255,238,214,0.38) 0%, rgba(255,238,214,0.18) 8%, transparent 19%)',
+        'radial-gradient(circle at 22% 82%, rgba(195,232,255,0.34) 0%, rgba(195,232,255,0.14) 9%, transparent 21%)',
+        'radial-gradient(circle at 72% 78%, rgba(255,214,232,0.28) 0%, rgba(255,214,232,0.12) 8%, transparent 18%)',
+        'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(248,250,255,0.08) 30%, rgba(78,86,98,0.18) 56%, rgba(240,245,252,0.22) 72%, rgba(182,194,209,0.52) 88%, rgba(196,208,223,0.78) 100%)',
+      ].join(', ')
+    : [
+        `radial-gradient(circle at 28% 24%, ${rgba(palette.sparkle, 0.95)} 0%, ${rgba(palette.facetSoft, 0.56)} 14%, ${rgba(palette.shellEdge, 0.18)} 28%, transparent 38%)`,
+        `radial-gradient(circle at 74% 76%, ${rgba(palette.flare, 0.98)} 0%, ${rgba(palette.flare, 0.68)} 10%, ${rgba(palette.shellGlow, 0.30)} 18%, transparent 30%)`,
+        `radial-gradient(circle at 42% 34%, ${rgba(palette.facet, 0.30)} 0%, ${rgba(palette.facet, 0.24)} 26%, rgba(3,8,20,0.00) 48%)`,
+        `radial-gradient(circle at 62% 22%, ${rgba(palette.facetSoft, 0.22)} 0%, ${rgba(palette.facetSoft, 0.08)} 16%, transparent 34%)`,
+        `radial-gradient(circle at 34% 28%, ${rgba(palette.facetSoft, 0.14)} 0%, ${rgba(palette.shellEdge, 0.12)} 24%, ${rgba(palette.shadow, 0.92)} 72%)`,
+        `radial-gradient(circle at 50% 50%, rgba(7,20,48,0.00) 0%, rgba(7,20,48,0.00) 54%, ${rgba(palette.shellGlow, 0.28)} 72%, ${rgba(palette.shadow, 0.92)} 86%, ${rgba(palette.shadow, 1)} 100%)`,
+      ].join(', ')
+  const coreBackground = isRoundDiamond
+    ? [
+        'radial-gradient(circle at 48% 44%, rgba(255,255,255,0.82) 0%, rgba(234,240,248,0.38) 18%, transparent 34%)',
+        'radial-gradient(circle at 50% 54%, rgba(24,28,36,0.00) 0%, rgba(24,28,36,0.18) 38%, rgba(24,28,36,0.54) 100%)',
+      ].join(', ')
+    : [
+        `radial-gradient(circle at 34% 30%, ${rgba(palette.facet, 0.32)} 0%, ${rgba(palette.facetSoft, 0.22)} 18%, rgba(6,16,44,0.00) 38%)`,
+        `radial-gradient(circle at 60% 62%, rgba(12,34,86,0.00) 0%, rgba(12,34,86,0.00) 44%, ${rgba(palette.shadow, 0.72)} 100%)`,
+      ].join(', ')
+  const topHighlightBackground = isRoundDiamond
+    ? 'radial-gradient(circle at 38% 38%, rgba(255,255,255,0.98) 0%, rgba(252,253,255,0.82) 20%, rgba(225,233,243,0.16) 50%, transparent 72%)'
+    : `radial-gradient(circle at 40% 42%, ${rgba(palette.sparkle, 0.96)} 0%, ${rgba(palette.sparkle, 0.64)} 18%, ${rgba(palette.sparkle, 0.10)} 48%, transparent 70%)`
+  const bottomFlareBackground = isRoundDiamond
+    ? 'radial-gradient(circle at 34% 36%, rgba(255,242,222,0.94) 0%, rgba(210,238,255,0.68) 22%, rgba(185,214,244,0.16) 46%, transparent 68%)'
+    : `radial-gradient(circle at 36% 38%, ${rgba(palette.flare, 0.98)} 0%, ${rgba(palette.flare, 0.74)} 20%, ${rgba(palette.flare, 0.22)} 42%, transparent 64%)`
+  const sideGlowBackground = isRoundDiamond
+    ? 'radial-gradient(circle, rgba(210,226,244,0.92) 0%, rgba(210,226,244,0.22) 56%, transparent 74%)'
+    : `radial-gradient(circle, ${rgba(palette.facet, 0.88)} 0%, ${rgba(palette.facet, 0.18)} 56%, transparent 74%)`
+  const roundOuterFacetBackground = isRoundDiamond
+    ? [
+        makeConicFacetGradient([
+          'rgba(255,255,255,0.96)',
+          'rgba(92,98,110,0.92)',
+          'rgba(244,247,251,0.96)',
+          'rgba(132,140,154,0.88)',
+          'rgba(255,255,255,0.92)',
+          'rgba(66,72,84,0.94)',
+          'rgba(238,243,249,0.96)',
+          'rgba(108,116,132,0.90)',
+        ], -12),
+        'radial-gradient(circle at 50% 50%, transparent 0 34%, rgba(255,255,255,0.00) 34% 58%, rgba(255,255,255,0.14) 58% 60%, rgba(196,208,222,0.12) 72%, transparent 82%)',
+      ].join(', ')
+    : ''
+  const roundStarFacetBackground = isRoundDiamond
+    ? [
+        makeConicFacetGradient([
+          'rgba(34,38,48,0.86)',
+          'rgba(248,250,252,0.88)',
+          'rgba(106,114,128,0.84)',
+          'rgba(255,255,255,0.90)',
+          'rgba(58,64,76,0.88)',
+          'rgba(244,246,250,0.88)',
+          'rgba(94,102,118,0.82)',
+          'rgba(255,255,255,0.92)',
+          'rgba(40,44,54,0.84)',
+          'rgba(246,249,252,0.90)',
+          'rgba(118,126,140,0.82)',
+          'rgba(255,255,255,0.94)',
+          'rgba(52,58,68,0.88)',
+          'rgba(240,244,249,0.88)',
+          'rgba(98,106,120,0.84)',
+          'rgba(255,255,255,0.92)',
+        ], -11.25),
+        'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.16) 0 6%, rgba(255,255,255,0.00) 6% 18%, rgba(255,255,255,0.08) 18% 20%, transparent 20%)',
+      ].join(', ')
+    : ''
+  const roundTableBackground = isRoundDiamond
+    ? [
+        'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(230,237,246,0.82) 44%, rgba(138,148,164,0.64) 52%, rgba(244,247,251,0.90) 62%, rgba(255,255,255,0.96))',
+        'radial-gradient(circle at 44% 34%, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.22) 36%, transparent 64%)',
+      ].join(', ')
+    : ''
+  const facetOverlayOpacity = isRoundDiamond ? 0.40 : 0.62
+  const patternOverlayOpacity = isRoundDiamond
+    ? [0.16, 0.24, 0.18, 0.16]
+    : stone === 'diamond'
+      ? [0.24, 0.38, 0.26, 0.24]
+      : [0.34, 0.50, 0.38, 0.34]
+  const sparkleOpacityKeyframes = isRoundDiamond
+    ? [0.18, 0.58, 0.14, 0.30]
+    : [0.35, 0.95, 0.28, 0.72]
 
   return (
     <motion.div
@@ -948,33 +1146,85 @@ function CutGemOrb({
           position: 'absolute',
           inset: 0,
           ...maskStyles,
-          background: [
-            `radial-gradient(circle at 28% 24%, ${rgba(palette.sparkle, 0.95)} 0%, ${rgba(palette.facetSoft, 0.56)} 14%, ${rgba(palette.shellEdge, 0.18)} 28%, transparent 38%)`,
-            `radial-gradient(circle at 74% 76%, ${rgba(palette.flare, 0.98)} 0%, ${rgba(palette.flare, 0.68)} 10%, ${rgba(palette.shellGlow, 0.30)} 18%, transparent 30%)`,
-            `radial-gradient(circle at 42% 34%, ${rgba(palette.facet, 0.30)} 0%, ${rgba(palette.facet, 0.24)} 26%, rgba(3,8,20,0.00) 48%)`,
-            `radial-gradient(circle at 62% 22%, ${rgba(palette.facetSoft, 0.22)} 0%, ${rgba(palette.facetSoft, 0.08)} 16%, transparent 34%)`,
-            `radial-gradient(circle at 34% 28%, ${rgba(palette.facetSoft, 0.14)} 0%, ${rgba(palette.shellEdge, 0.12)} 24%, ${rgba(palette.shadow, 0.92)} 72%)`,
-            `radial-gradient(circle at 50% 50%, rgba(7,20,48,0.00) 0%, rgba(7,20,48,0.00) 54%, ${rgba(palette.shellGlow, 0.28)} 72%, ${rgba(palette.shadow, 0.92)} 86%, ${rgba(palette.shadow, 1)} 100%)`,
-          ].join(', '),
+          background: shellBackground,
           boxShadow: [
-            `inset 0 1px 1px ${rgba(palette.sparkle, 0.12)}`,
-            'inset 0 -8px 16px rgba(0,0,0,0.42)',
-            `0 0 0 1px ${rgba(palette.facetSoft, 0.10)}`,
-            `0 0 20px ${rgba(palette.shellGlow, rimGlow)}`,
+            isRoundDiamond ? 'inset 0 1px 1px rgba(255,255,255,0.42)' : `inset 0 1px 1px ${rgba(palette.sparkle, 0.12)}`,
+            isRoundDiamond ? 'inset 0 -10px 18px rgba(32,36,42,0.22)' : 'inset 0 -8px 16px rgba(0,0,0,0.42)',
+            isRoundDiamond ? '0 0 0 1px rgba(235,242,250,0.32)' : `0 0 0 1px ${rgba(palette.facetSoft, 0.10)}`,
+            isRoundDiamond ? `0 0 18px rgba(220,233,246,${(rimGlow * 0.82).toFixed(2)})` : `0 0 20px ${rgba(palette.shellGlow, rimGlow)}`,
           ].join(', '),
           overflow: 'hidden',
         }}
       >
+        {isRoundDiamond && (
+          <>
+            <motion.div
+              style={{
+                position: 'absolute',
+                inset: '4.5%',
+                ...maskStyles,
+                background: roundOuterFacetBackground,
+                opacity: 0.78,
+              }}
+              animate={{
+                rotate: [0, 3, -2, 0],
+                opacity: [0.72, 0.84, 0.76, 0.72],
+              }}
+              transition={{
+                duration: 9.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+
+            <motion.div
+              style={{
+                position: 'absolute',
+                inset: '19%',
+                ...maskStyles,
+                background: roundStarFacetBackground,
+                opacity: 0.90,
+              }}
+              animate={{
+                rotate: [0, -4, 3, 0],
+                scale: [1, 1.02, 0.99, 1],
+              }}
+              transition={{
+                duration: 8.4,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+
+            <motion.div
+              style={{
+                position: 'absolute',
+                inset: '32%',
+                ...roundTableMaskStyles,
+                background: roundTableBackground,
+                boxShadow: '0 0 0 1px rgba(255,255,255,0.36)',
+                opacity: 0.96,
+              }}
+              animate={{
+                scale: [1, 1.03, 1],
+                opacity: [0.90, 0.98, 0.92, 0.90],
+              }}
+              transition={{
+                duration: 6.2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          </>
+        )}
+
         <motion.div
           style={{
             position: 'absolute',
             inset: cutConfig.coreInset,
             ...maskStyles,
-            background: [
-              `radial-gradient(circle at 34% 30%, ${rgba(palette.facet, 0.32)} 0%, ${rgba(palette.facetSoft, 0.22)} 18%, rgba(6,16,44,0.00) 38%)`,
-              `radial-gradient(circle at 60% 62%, rgba(12,34,86,0.00) 0%, rgba(12,34,86,0.00) 44%, ${rgba(palette.shadow, 0.72)} 100%)`,
-            ].join(', '),
-            filter: 'blur(4px)',
+            background: coreBackground,
+            filter: isRoundDiamond ? 'blur(2px)' : 'blur(4px)',
           }}
           animate={{
             rotate: [0, 20, -12, 0],
@@ -994,8 +1244,8 @@ function CutGemOrb({
             position: 'absolute',
             ...cutConfig.topHighlight,
             borderRadius: '50%',
-            background: `radial-gradient(circle at 40% 42%, ${rgba(palette.sparkle, 0.96)} 0%, ${rgba(palette.sparkle, 0.64)} 18%, ${rgba(palette.sparkle, 0.10)} 48%, transparent 70%)`,
-            filter: 'blur(3px)',
+            background: topHighlightBackground,
+            filter: isRoundDiamond ? 'blur(2px)' : 'blur(3px)',
           }}
           animate={{
             x: ['0%', '4%', '1%', '0%'],
@@ -1015,8 +1265,8 @@ function CutGemOrb({
             position: 'absolute',
             ...cutConfig.bottomFlare,
             borderRadius: '50%',
-            background: `radial-gradient(circle at 36% 38%, ${rgba(palette.flare, 0.98)} 0%, ${rgba(palette.flare, 0.74)} 20%, ${rgba(palette.flare, 0.22)} 42%, transparent 64%)`,
-            filter: 'blur(4px)',
+            background: bottomFlareBackground,
+            filter: isRoundDiamond ? 'blur(3px)' : 'blur(4px)',
             mixBlendMode: 'screen',
           }}
           animate={{
@@ -1037,8 +1287,8 @@ function CutGemOrb({
             position: 'absolute',
             ...cutConfig.sideGlow,
             borderRadius: '50%',
-            background: `radial-gradient(circle, ${rgba(palette.facet, 0.88)} 0%, ${rgba(palette.facet, 0.18)} 56%, transparent 74%)`,
-            opacity: 0.72,
+            background: sideGlowBackground,
+            opacity: isRoundDiamond ? 0.44 : 0.72,
           }}
           animate={{
             x: ['0%', '10%', '0%'],
@@ -1098,7 +1348,7 @@ function CutGemOrb({
             ...maskStyles,
             background: cutConfig.facetOverlay,
             mixBlendMode: 'screen',
-            opacity: 0.62,
+            opacity: facetOverlayOpacity,
           }}
           animate={{
             rotate: [0, 8, -5, 0],
@@ -1122,13 +1372,11 @@ function CutGemOrb({
               `repeating-linear-gradient(-135deg, transparent 0 10%, ${rgba(palette.facet, 0.08)} 10% 11.4%, transparent 11.4% 22%)`,
             ].join(', '),
             mixBlendMode: 'screen',
-            opacity: stone === 'diamond' ? 0.34 : 0.46,
+            opacity: patternOverlayOpacity[0],
           }}
           animate={{
             rotate: [0, -6, 4, 0],
-            opacity: stone === 'diamond'
-              ? [0.24, 0.38, 0.26, 0.24]
-              : [0.34, 0.50, 0.38, 0.34],
+            opacity: patternOverlayOpacity,
           }}
           transition={{
             duration: 7.4,
@@ -1152,7 +1400,7 @@ function CutGemOrb({
             }}
             animate={{
               scale: [0.7, 1.15, 0.78, 1],
-              opacity: [0.35, 0.95, 0.28, 0.72],
+              opacity: sparkleOpacityKeyframes,
             }}
             transition={{
               duration: sparkle.duration,
@@ -1168,12 +1416,208 @@ function CutGemOrb({
             position: 'absolute',
             inset: '8%',
             ...maskStyles,
-            border: `1px solid ${rgba(palette.sparkle, 0.14)}`,
+            border: isRoundDiamond ? '1px solid rgba(255,255,255,0.24)' : `1px solid ${rgba(palette.sparkle, 0.14)}`,
             opacity: 0.8,
           }}
         />
       </div>
     </motion.div>
+  )
+}
+
+function pointsToString(points: ReadonlyArray<readonly [number, number]>) {
+  return points.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ')
+}
+
+function RoundDiamondFacetRender() {
+  const facets = useMemo(() => {
+    const geometry = buildRoundBrilliantCut()
+    const position = geometry.getAttribute('position')
+    const keyLight = new THREE.Vector3(0.24, 0.95, -0.18).normalize()
+    const fillLight = new THREE.Vector3(-0.68, 0.58, 0.24).normalize()
+    const rimLight = new THREE.Vector3(0.46, 0.42, 0.78).normalize()
+
+    const clamp = (value: number, min: number, max: number) =>
+      Math.min(max, Math.max(min, value))
+
+    const project = (vertex: THREE.Vector3) => [50 + vertex.x * 71, 50 + vertex.z * 71] as const
+
+    const toColor = (normal: THREE.Vector3, centroid: THREE.Vector3) => {
+      const radial = clamp(Math.hypot(centroid.x, centroid.z) / 0.68, 0, 1)
+      const angle = Math.atan2(centroid.z, centroid.x)
+      const pavilion = normal.y < -0.08
+
+      const direct = Math.max(0, normal.dot(keyLight))
+      const fill = Math.max(0, normal.dot(fillLight))
+      const rim = Math.max(0, normal.dot(rimLight))
+      const ringWave = Math.cos(angle * 16 - radial * 5)
+      const starWave = Math.cos(angle * 8 + radial * 9)
+
+      let value = 0
+
+      if (pavilion) {
+        value = 44 + Math.abs(normal.y) * 48 + (1 - radial) * 20 + starWave * 18
+      } else if (radial < 0.22) {
+        value = 194 + direct * 28 + Math.cos(angle * 4 - 0.8) * 18
+      } else if (radial < 0.54) {
+        value = 92 + direct * 54 + fill * 18 + starWave * 72
+      } else {
+        value = 176 + direct * 32 + fill * 16 + rim * 14 + ringWave * 46
+      }
+
+      value = clamp(value, 34, 255)
+
+      let r = value
+      let g = value + 4
+      let b = value + 8
+
+      if (!pavilion && radial > 0.72) {
+        if (Math.cos(angle * 4) > 0.78) {
+          r += 20
+          g += 10
+        }
+
+        if (Math.sin(angle * 4) > 0.78) {
+          g += 10
+          b += 20
+        }
+      }
+
+      return `rgb(${clamp(Math.round(r), 0, 255)}, ${clamp(Math.round(g), 0, 255)}, ${clamp(Math.round(b), 0, 255)})`
+    }
+
+    const list: Array<{
+      points: string
+      fill: string
+      opacity: number
+      stroke: string
+      order: number
+    }> = []
+
+    for (let index = 0; index < position.count; index += 3) {
+      const a = new THREE.Vector3(position.getX(index), position.getY(index), position.getZ(index))
+      const b = new THREE.Vector3(position.getX(index + 1), position.getY(index + 1), position.getZ(index + 1))
+      const c = new THREE.Vector3(position.getX(index + 2), position.getY(index + 2), position.getZ(index + 2))
+
+      const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize()
+      const centroid = a.clone().add(b).add(c).multiplyScalar(1 / 3)
+      const pavilion = normal.y < -0.08
+
+      list.push({
+        points: pointsToString([project(a), project(b), project(c)]),
+        fill: toColor(normal, centroid),
+        opacity: pavilion ? 0.40 : clamp(0.66 + normal.y * 0.24, 0.66, 0.98),
+        stroke: pavilion ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.18)',
+        order: (pavilion ? 0 : 100) + centroid.y,
+      })
+    }
+
+    return list.sort((a, b) => a.order - b.order)
+  }, [])
+
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid meet"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+      }}
+    >
+      <defs>
+        <clipPath id="round-diamond-clip">
+          <circle cx="50" cy="50" r="47.6" />
+        </clipPath>
+        <filter id="round-diamond-shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2.8" />
+        </filter>
+        <radialGradient id="round-diamond-shell" cx="36%" cy="28%" r="74%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="38%" stopColor="#fafcff" />
+          <stop offset="76%" stopColor="#ebeff4" />
+          <stop offset="100%" stopColor="#d8e0e8" />
+        </radialGradient>
+        <radialGradient id="round-diamond-core" cx="50%" cy="50%" r="54%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.10)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+      </defs>
+
+      <ellipse
+        cx="50"
+        cy="54"
+        rx="30"
+        ry="28"
+        fill="rgba(198,207,218,0.22)"
+        filter="url(#round-diamond-shadow)"
+      />
+
+      <circle cx="50" cy="50" r="47.8" fill="url(#round-diamond-shell)" />
+
+      <g clipPath="url(#round-diamond-clip)">
+        {facets.map((facet, index) => (
+          <polygon
+            key={`round-facet-${index}`}
+            points={facet.points}
+            fill={facet.fill}
+            opacity={facet.opacity}
+            stroke={facet.stroke}
+            strokeWidth="0.42"
+          />
+        ))}
+
+        <circle cx="50" cy="50" r="7.6" fill="rgba(255,255,255,0.08)" />
+        <circle cx="50" cy="50" r="18" fill="url(#round-diamond-core)" />
+        <circle cx="50" cy="50" r="4.5" fill="rgba(82,92,108,0.08)" />
+        <circle cx="28" cy="79" r="2.8" fill="rgba(186,228,255,0.18)" />
+        <circle cx="76" cy="82" r="2.2" fill="rgba(255,222,214,0.16)" />
+        <circle cx="81" cy="25" r="2.0" fill="rgba(255,238,200,0.14)" />
+      </g>
+
+      <circle
+        cx="50"
+        cy="50"
+        r="47.8"
+        fill="none"
+        stroke="rgba(255,255,255,0.84)"
+        strokeWidth="0.9"
+      />
+      <circle
+        cx="50"
+        cy="50"
+        r="47.2"
+        fill="none"
+        stroke="rgba(176,186,198,0.24)"
+        strokeWidth="1.2"
+      />
+    </svg>
+  )
+}
+
+function RealisticRoundDiamondOrb({
+  glowAmount,
+  hovered,
+}: {
+  glowAmount: number
+  hovered: boolean
+}) {
+  const haloStrength = 0.08 + glowAmount * (hovered ? 0.10 : 0.06)
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        overflow: 'visible',
+        filter: `drop-shadow(0 10px 18px rgba(210, 220, 232, ${haloStrength.toFixed(2)}))`,
+      }}
+    >
+      <RoundDiamondFacetRender />
+    </div>
   )
 }
 
@@ -1190,6 +1634,7 @@ export function GemBadge({
 }: GemBadgeProps) {
   const [hovered, setHovered] = useState(false)
   const cfg = STONE_CONFIGS[stone] ?? STONE_CONFIGS.diamond
+  const isRealisticRoundDiamond = stone === 'diamond' && cut === 'round'
   const label = ariaLabel ?? (
     `${DIAMOND_CUTS[cut].label} ${stone} gem`
   )
@@ -1207,6 +1652,7 @@ export function GemBadge({
       whileTap={{ scale: 0.88 }}
       transition={{ type: 'spring', stiffness: 360, damping: 20 }}
       style={{
+        position:     'relative',
         width:        size,
         height:       size,
         padding:      0,
@@ -1219,13 +1665,20 @@ export function GemBadge({
         ...style,
       }}
     >
-      <CutGemOrb
-        glowAmount={glowAmount}
-        hovered={hovered}
-        cut={cut}
-        cfg={cfg}
-        stone={stone}
-      />
+      {isRealisticRoundDiamond ? (
+        <RealisticRoundDiamondOrb
+          glowAmount={glowAmount}
+          hovered={hovered}
+        />
+      ) : (
+        <CutGemOrb
+          glowAmount={glowAmount}
+          hovered={hovered}
+          cut={cut}
+          cfg={cfg}
+          stone={stone}
+        />
+      )}
     </motion.button>
   )
 }
