@@ -19,12 +19,16 @@ function MockToolbar({
   cut,
   renderMode,
   stone,
+  rotation,
+  view,
 }: {
   glow: boolean
   glowIntensity: number
   cut: DiamondCut
   renderMode: GemBadgeRenderMode
   stone: GemBadgeStone
+  rotation: number
+  view: GemView
 }) {
   return (
     <div style={{
@@ -43,6 +47,8 @@ function MockToolbar({
         cut={cut}
         renderMode={renderMode}
         size={58}
+        view={view}
+        rotation={rotation}
         glow={glow}
         glowIntensity={glowIntensity}
         onClick={() => alert('gem clicked')}
@@ -316,8 +322,8 @@ export default function Page() {
               <input
                 type="range"
                 min="0"
-                max="360"
-                step="1"
+                max="315"
+                step="45"
                 value={selectedRotation}
                 onChange={(event) => setSelectedRotation(Number(event.target.value))}
                 style={s.slider}
@@ -501,8 +507,10 @@ export default function Page() {
               glow={glowEnabled}
               glowIntensity={glowIntensity}
               cut={selectedCut}
-              renderMode="webgl"
+              renderMode={selectedRenderMode}
               stone={selectedStone}
+              rotation={selectedRotation}
+              view={selectedView}
             />
           </div>
         </div>
