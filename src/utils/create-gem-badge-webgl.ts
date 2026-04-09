@@ -7,6 +7,7 @@ interface GemBadgeWebGLOptions extends Required<Pick<GemBadgeConfig, 'animate' |
   disabled?: boolean
   force2d?: boolean
   targetElement?: HTMLElement | null
+  onContextLost?: () => void
 }
 
 interface PreparedGeometry {
@@ -863,7 +864,8 @@ function mountWebGLCore(
     event.preventDefault()
     disposed = true
     window.cancelAnimationFrame(rafId)
-    // Don't draw 2D here — would lock the canvas out of future WebGL attempts
+    // Notify the outer function so it can restore the 2D fallback and reset state
+    options.onContextLost?.()
   }
 
   canvas.addEventListener('webglcontextlost', onContextLost)
@@ -940,7 +942,16 @@ export function mountGemBadgeWebGL(
     webglCanvas = makeOverlayCanvas()
     container.appendChild(webglCanvas)
 
-    const cleanup = mountWebGLCore(webglCanvas, { ...options, targetElement: container })
+    const onContextLost = () => {
+      // Browser lost the context (e.g. hit the WebGL context limit while scrolling).
+      // Run the full outer cleanup: disconnects observers, removes the blank WebGL
+      // canvas, and restores the 2D fallback so the badge doesn't appear broken.
+      const savedCleanup = webglCleanup
+      webglCleanup = null  // clear first to prevent deactivate() double-running
+      savedCleanup?.()
+    }
+
+    const cleanup = mountWebGLCore(webglCanvas, { ...options, targetElement: container, onContextLost })
     if (cleanup) {
       fallbackCanvas.style.opacity = '0'
       webglCleanup = () => {
