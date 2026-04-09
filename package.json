@@ -4,6 +4,9 @@
   "description": "Beautiful precious stone-inspired React button components",
   "license": "MIT",
   "type": "module",
+  "workspaces": [
+    "showcase"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +21,10 @@
   "sideEffects": false,
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "showcase:dev": "bun --cwd showcase run dev",
+    "showcase:build": "bun --cwd showcase run build",
+    "showcase:start": "bun --cwd showcase run start"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
