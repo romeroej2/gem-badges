@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gem Collection</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #030307; }
+    canvas { display: block; position: fixed; inset: 0; }
+    #ui {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; flex-direction: column; align-items: center;
+      padding-top: 48px; pointer-events: none;
+    }
+    h1 {
+      color: rgba(255,255,255,0.88); font-family: system-ui, sans-serif;
+      font-weight: 200; font-size: 20px; letter-spacing: 9px;
+      text-transform: uppercase;
+    }
+    #subtitle {
+      color: rgba(255,255,255,0.1); font-family: system-ui, sans-serif;
+      font-size: 9px; letter-spacing: 4px; text-transform: uppercase; margin-top: 7px;
+    }
+    #status {
+      position: fixed; bottom: 44px; left: 50%; transform: translateX(-50%);
+      font-family: system-ui, sans-serif; font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; white-space: nowrap; pointer-events: none;
+      transition: color 0.5s; color: rgba(255,255,255,0.12);
+    }
+    .label {
+      position: fixed; pointer-events: none; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-family: system-ui, sans-serif;
+    }
+    .lname { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; transition: color 0.3s; }
+    .lcut  { font-size: 9px; letter-spacing: 0.6px; text-transform: uppercase; color: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui">
+    <h1>Gem Collection</h1>
+    <div id="subtitle">Select your stone</div>
+  </div>
+  <div id="status">Hover to see the brilliance</div>
+
+  <script src="./three.min.js"></script>
+  <script>
+  const GEMS = [
+    { name:'Diamond', cut:'Round Brilliant', shape:'roundBrilliant',
+      col:0xadd8ff, emi:0x3370cc, glw:'#80c0ff', ior:2.42 },
+    { name:'Diamond', cut:'Princess Cut', shape:'princess',
+      col:0xdde8ff, emi:0x5060ee, glw:'#a0b8ff', ior:2.42 },
+    { name:'Emerald', cut:'Emerald Cut', shape:'emerald',
+      col:0x00ff66, emi:0x009933, glw:'#00ee55', ior:1.58 },
+    { name:'Ruby', cut:'Oval Cut', shape:'oval',
+      col:0xff2244, emi:0xcc0022, glw:'#ff1030', ior:1.76 },
+    { name:'Sapphire', cut:'Cushion Cut', shape:'cushion',
+      col:0x2255ff, emi:0x0030cc, glw:'#1144ff', ior:1.77 },
+    { name:'Amethyst', cut:'Pear Cut', shape:'pear',
+      col:0x9922ff, emi:0x6000cc, glw:'#8810ee', ior:1.54 },
+  ];
+
+  // 3×2 grid positions
+  const POS = [
+    [-3.3, 1.65, 0],[0, 1.65, 0],[3.3, 1.65, 0],
+    [-3.3,-1.65, 0],[0,-1.65, 0],[3.3,-1.65, 0],
+  ];
+
+  // ── Renderer ──────────────────────────────────────────────────────────────
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.physicallyCorrectLights = true;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.6;
+  renderer.shadowMap.enabled = false;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  camera.position.set(0, 0, 11.5);
+
+  // ── Background gradient sphere ─────────────────────────────────────────────
+  const bgMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(40, 32, 16),
+    new THREE.ShaderMaterial({
+      uniforms: {
+        t:{ value: 0 },
+        colA:{ value: new THREE.Color(0x0a0820) },
+        colB:{ value: new THREE.Color(0x030307) },
+      },
+      vertexShader:`
+        varying vec3 vP;
+        void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }
+      `,
+      fragmentShader:`
+        uniform vec3 colA,colB; uniform float t; varying vec3 vP;
+        void main(){
+          float h = clamp(vP.y/40.0*0.5+0.6, 0.0, 1.0);
+          vec3 c = mix(colB, colA, h);
+          // subtle vignette glow at equator
+          float eq = exp(-abs(vP.y/40.0)*4.0)*0.04;
+          c += vec3(0.1,0.08,0.25)*eq;
+          gl_FragColor = vec4(c,1.0);
+        }
+      `,
+      side: THREE.BackSide,
+      depthWrite: false,
+    })
+  );
+  scene.add(bgMesh);
+
+  // ── Lights ────────────────────────────────────────────────────────────────
+  scene.add(new THREE.AmbientLight(0xffffff, 0.04));
+
+  const mainLight = new THREE.DirectionalLight(0xffffff, 2.5);
+  mainLight.position.set(5, 8, 6);
+  scene.add(mainLight);
+
+  const fillLight = new THREE.PointLight(0x8090ee, 1.8, 40);
+  fillLight.position.set(-7, -3, 4);
+  scene.add(fillLight);
+
+  const rimLight = new THREE.PointLight(0xffffff, 1.2, 40);
+  rimLight.position.set(0, -7, -3);
+  scene.add(rimLight);
+
+  // ── Geometry factory ──────────────────────────────────────────────────────
+  function makeGeo(shape) {
+    const V2 = THREE.Vector2;
+    if (shape === 'roundBrilliant') {
+      return new THREE.LatheGeometry([
+        new V2(0,-0.92), new V2(0.07,-0.78),
+        new V2(0.42,-0.06), new V2(0.5,0),
+        new V2(0.46,0.07), new V2(0.24,0.30),
+        new V2(0,0.37),
+      ], 8);
+    }
+    if (shape === 'princess') {
+      const g = new THREE.OctahedronGeometry(0.58);
+      g.applyMatrix4(new THREE.Matrix4().makeScale(1, 0.65, 1));
+      return g;
+    }
+    if (shape === 'emerald') {
+      const g = new THREE.BoxGeometry(1.35, 0.62, 0.88, 2, 2, 2);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i);
+        if (y < 0) { const t = 1 + y * 0.38; p.setX(i, p.getX(i)*t); p.setZ(i, p.getZ(i)*t); }
+      }
+      p.needsUpdate = true; g.computeVertexNormals(); return g;
+    }
+    if (shape === 'oval') {
+      const g = new THREE.LatheGeometry([
+        new V2(0,-0.88), new V2(0.07,-0.76),
+        new V2(0.40,-0.06), new V2(0.46,0),
+        new V2(0.42,0.06), new V2(0.22,0.28),
+        new V2(0,0.34),
+      ], 28);
+      g.applyMatrix4(new THREE.Matrix4().makeScale(1.5, 1, 1)); return g;
+    }
+    if (shape === 'cushion') {
+      const g = new THREE.LatheGeometry([
+        new V2(0,-0.68), new V2(0.22,-0.48),
+        new V2(0.44,-0.05), new V2(0.5,0),
+        new V2(0.46,0.07), new V2(0.24,0.30),
+        new V2(0,0.37),
+      ], 8);
+      g.applyMatrix4(new THREE.Matrix4().makeScale(1.08, 1, 1.08)); return g;
+    }
+    if (shape === 'pear') {
+      return new THREE.LatheGeometry([
+        new V2(0,-0.88), new V2(0.06,-0.72),
+        new V2(0.36,-0.06), new V2(0.44,0.06),
+        new V2(0.38,0.22), new V2(0.26,0.46),
+        new V2(0,0.64),
+      ], 5);
+    }
+    return new THREE.IcosahedronGeometry(0.5, 2);
+  }
+
+  // ── Build gem groups ──────────────────────────────────────────────────────
+  const groups = [];
+
+  GEMS.forEach((cfg, i) => {
+    const group = new THREE.Group();
+    group.position.set(...POS[i]);
+
+    // Main gem mesh — MeshPhysicalMaterial: transmission + clearcoat
+    const geo = makeGeo(cfg.shape);
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: cfg.col,
+      emissive: cfg.emi,
+      emissiveIntensity: 0.22,
+      roughness: 0.02,
+      metalness: 0.05,
+      transmission: 0.88,
+      ior: cfg.ior,
+      thickness: 0.7,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.0,
+      reflectivity: 1.0,
+      transparent: true,
+      opacity: 1,
+    });
+    const gem = new THREE.Mesh(geo, mat);
+    group.add(gem);
+
+    // Inner core glow — a slightly smaller version with strong emissive
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: cfg.emi,
+      transparent: true,
+      opacity: 0.15,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const inner = new THREE.Mesh(geo.clone(), innerMat);
+    inner.scale.setScalar(0.85);
+    group.add(inner);
+
+    // Additive glow halos (faked bloom)
+    const glowCol = new THREE.Color(cfg.glw);
+    [
+      { r: 0.80, op: 0.18 },
+      { r: 1.10, op: 0.10 },
+      { r: 1.55, op: 0.055 },
+      { r: 2.20, op: 0.025 },
+    ].forEach(({ r, op }) => {
+      const halo = new THREE.Mesh(
+        new THREE.SphereGeometry(r, 18, 14),
+        new THREE.MeshBasicMaterial({
+          color: glowCol,
+          transparent: true,
+          opacity: op,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.BackSide,
+        })
+      );
+      group.add(halo);
+    });
+
+    // Per-gem colored point light
+    const gemLight = new THREE.PointLight(cfg.col, 0.6, 6);
+    gemLight.position.set(0, 0.5, 1.2);
+    group.add(gemLight);
+
+    group.userData = {
+      gem, mat, gemLight,
+      config: cfg,
+      rotY: 0, rotX: 0,
+      targetRotY: 0, targetRotX: 0,
+      hovered: false, selected: false,
+      glowAnim: 0,
+    };
+
+    scene.add(group);
+    groups.push(group);
+  });
+
+  // ── HTML Labels ───────────────────────────────────────────────────────────
+  const labels = groups.map((g, i) => {
+    const d = document.createElement('div');
+    d.className = 'label';
+    d.innerHTML = `<span class="lname">${g.userData.config.name}</span>
+                   <span class="lcut">${g.userData.config.cut}</span>`;
+    document.body.appendChild(d);
+    return d;
+  });
+
+  // ── Mouse / interaction ───────────────────────────────────────────────────
+  const mouse = new THREE.Vector2(-99, -99);
+  const raycaster = new THREE.Raycaster();
+  let hoveredGroup = null, selectedGroup = null;
+  const status = document.getElementById('status');
+
+  window.addEventListener('mousemove', e => {
+    mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  });
+
+  window.addEventListener('click', () => {
+    if (!hoveredGroup) return;
+    if (selectedGroup && selectedGroup !== hoveredGroup) {
+      selectedGroup.userData.selected = false;
+    }
+    const wasSelected = hoveredGroup.userData.selected;
+    hoveredGroup.userData.selected = !wasSelected;
+    selectedGroup = !wasSelected ? hoveredGroup : null;
+    const cfg = hoveredGroup.userData.config;
+    status.textContent = selectedGroup
+      ? `✦  ${cfg.name}  ·  ${cfg.cut}`
+      : 'Hover to see the brilliance';
+    status.style.color = selectedGroup ? cfg.glw : 'rgba(255,255,255,0.12)';
+  });
+
+  // ── Resize ────────────────────────────────────────────────────────────────
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ── Render loop ───────────────────────────────────────────────────────────
+  const clock = new THREE.Clock();
+  const tmpV = new THREE.Vector3();
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    const t  = clock.getElapsedTime();
+
+    // Raycast hover
+    raycaster.setFromCamera(mouse, camera);
+    const meshes = groups.map(g => g.userData.gem);
+    const hits = raycaster.intersectObjects(meshes);
+    const newHov = hits.length ? groups[meshes.indexOf(hits[0].object)] : null;
+
+    if (newHov !== hoveredGroup) {
+      if (hoveredGroup) hoveredGroup.userData.hovered = false;
+      hoveredGroup = newHov;
+      if (hoveredGroup) hoveredGroup.userData.hovered = true;
+      document.body.style.cursor = hoveredGroup ? 'pointer' : 'default';
+      if (!selectedGroup) {
+        if (hoveredGroup) {
+          const c = hoveredGroup.userData.config;
+          status.textContent = `${c.name}  ·  ${c.cut}`;
+          status.style.color = c.glw + 'bb';
+        } else {
+          status.textContent = 'Hover to see the brilliance';
+          status.style.color = 'rgba(255,255,255,0.12)';
+        }
+      }
+    }
+
+    if (hoveredGroup) {
+      hoveredGroup.userData.targetRotY = mouse.x * Math.PI * 0.9;
+      hoveredGroup.userData.targetRotX = -mouse.y * Math.PI * 0.28;
+    }
+
+    // Animate gems
+    groups.forEach((group, i) => {
+      const ud = group.userData;
+      const active = ud.hovered || ud.selected;
+
+      if (!active) {
+        ud.rotY += dt * 0.38;
+        ud.gem.rotation.y = ud.rotY;
+        ud.gem.rotation.x = THREE.MathUtils.lerp(ud.gem.rotation.x, 0, dt * 2.5);
+      } else {
+        ud.gem.rotation.y = THREE.MathUtils.lerp(ud.gem.rotation.y, ud.targetRotY, dt * 5);
+        ud.gem.rotation.x = THREE.MathUtils.lerp(ud.gem.rotation.x, ud.targetRotX, dt * 5);
+        ud.rotY = ud.gem.rotation.y;
+      }
+
+      // Float
+      const phase = t * 1.4 + i * 1.05;
+      group.position.y = POS[i][1] + Math.sin(phase) * 0.09;
+
+      // Scale spring
+      const ts = active ? 1.13 : 1.0;
+      const cs = group.scale.x;
+      group.scale.setScalar(cs + (ts - cs) * Math.min(dt * 9, 1));
+
+      // Emissive pulse
+      const te = active ? 0.45 : 0.22;
+      ud.mat.emissiveIntensity = THREE.MathUtils.lerp(ud.mat.emissiveIntensity, te, dt * 5);
+
+      // Gem light intensity
+      const tl = active ? 1.4 : 0.55;
+      ud.gemLight.intensity = THREE.MathUtils.lerp(ud.gemLight.intensity, tl, dt * 5);
+
+      // Label position (project 3D → 2D)
+      tmpV.copy(group.position).add(new THREE.Vector3(0, -1.05, 0));
+      tmpV.project(camera);
+      const lx = (tmpV.x + 1) / 2 * window.innerWidth;
+      const ly = (1 - (tmpV.y + 1) / 2) * window.innerHeight;
+      const lbl = labels[i];
+      lbl.style.left = lx + 'px';
+      lbl.style.top  = ly + 'px';
+      const nameEl = lbl.querySelector('.lname');
+      nameEl.style.color = active
+        ? ud.config.glw
+        : ud.config.glw + '55';
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+  </script>
+</body>
+</html>
