@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Fancy Buttons — Precious Stone Collection',
-  description: 'Beautiful gem-inspired React button components',
+  title: 'Gem Badge Lab — Precious Stone Collection',
+  description: 'Shader and DOM explorations for gemstone badge rendering',
 }
 
 export default function RootLayout({

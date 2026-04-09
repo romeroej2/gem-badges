@@ -1,5 +1,15 @@
+export { GemBadge } from './components/GemBadge'
 export { GemButton } from './components/GemButton'
-export type { GemButtonProps, GemType, GemSize } from './types'
+export type {
+  GemBadgeConfig,
+  GemBadgeProps,
+  GemBadgeRenderMode,
+  GemButtonProps,
+  GemCut,
+  GemMaterial,
+  GemType,
+  GemSize,
+} from './types'
 
 import React from 'react'
 import { GemButton } from './components/GemButton'

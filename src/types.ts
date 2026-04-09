@@ -10,6 +10,40 @@ export type GemType =
 
 export type GemSize = 'sm' | 'md' | 'lg' | 'xl'
 
+export type GemMaterial = GemType
+
+export type GemCut =
+  | 'round'
+  | 'princess'
+  | 'oval'
+  | 'emerald'
+  | 'heart'
+  | 'marquise'
+
+export type GemBadgeRenderMode = 'auto' | 'webgl' | 'dom'
+
+export interface GemBadgeConfig {
+  /** Badge size in CSS pixels */
+  size?: number
+  /** Material / stone preset */
+  material?: GemMaterial
+  /** Gem cut preset */
+  cut?: GemCut
+  /** Preferred renderer */
+  renderMode?: GemBadgeRenderMode
+  /** Enables the outer glow */
+  glow?: boolean
+  /** Multiplies the glow intensity */
+  glowIntensity?: number
+  /** Enables subtle internal animation */
+  animate?: boolean
+}
+
+export interface GemBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  /** Single config object for badge appearance */
+  config?: GemBadgeConfig
+}
+
 export interface GemButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** The precious stone visual theme */

@@ -1,8 +1,8 @@
 {
   "name": "fancy-buttons",
   "version": "0.1.0",
-  "description": "Beautiful precious stone-inspired React button components",
-  "license": "MIT",
+  "description": "Beautiful precious stone-inspired React gem badge components",
+  "license": "GPL-3.0-only",
   "type": "module",
   "workspaces": [
     "showcase"
@@ -30,9 +30,13 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
+  "dependencies": {
+    "three": "^0.183.2"
+  },
   "devDependencies": {
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^4",
     "typescript": "^5",
     "vite": "^5",

@@ -1,8 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { GemBadge, type DiamondCut, type GemBadgeStone } from '../components/GemBadge'
-import { GemButton, type GemType } from 'fancy-buttons'
+import {
+  GemBadge,
+  type DiamondCut,
+  type GemBadgeStone,
+  type GemBadgeRenderMode,
+} from '../components/GemBadge'
 
 const ALL_BADGE_STONES: GemBadgeStone[] = ['diamond', 'ruby', 'emerald', 'sapphire', 'amethyst', 'topaz']
 const ALL_DIAMOND_CUTS: DiamondCut[] = ['round', 'princess', 'oval', 'emerald', 'heart', 'marquise']
@@ -12,11 +16,13 @@ function MockToolbar({
   glow,
   glowIntensity,
   cut,
+  renderMode,
   stone,
 }: {
   glow: boolean
   glowIntensity: number
   cut: DiamondCut
+  renderMode: GemBadgeRenderMode
   stone: GemBadgeStone
 }) {
   return (
@@ -34,6 +40,7 @@ function MockToolbar({
       <GemBadge
         stone={stone}
         cut={cut}
+        renderMode={renderMode}
         size={58}
         glow={glow}
         glowIntensity={glowIntensity}
@@ -195,20 +202,22 @@ const s: Record<string, React.CSSProperties> = {
   },
 }
 
-const ALL_CSS_GEMS: GemType[] = ['diamond', 'ruby', 'emerald', 'sapphire', 'amethyst', 'topaz']
-
 export default function Page() {
   const [selectedStone, setSelectedStone] = useState<GemBadgeStone>('diamond')
   const [selectedCut, setSelectedCut] = useState<DiamondCut>('round')
+  const [selectedRenderMode, setSelectedRenderMode] = useState<GemBadgeRenderMode>('webgl')
   const [glowEnabled, setGlowEnabled] = useState(true)
   const [glowIntensity, setGlowIntensity] = useState(0.28)
+  const previewModeLabel = selectedRenderMode === 'webgl'
+    ? 'library webgl'
+    : 'dom'
 
   return (
     <div style={s.page}>
 
       {/* HEADER */}
       <header style={s.head}>
-        <h1 style={s.title}>Fancy Buttons</h1>
+        <h1 style={s.title}>Gem Badge Lab</h1>
         <p style={s.sub}>Precious Stone Collection</p>
       </header>
 
@@ -244,16 +253,29 @@ export default function Page() {
               ))}
             </div>
 
+            <div style={s.controlRow}>
+              {(['webgl', 'dom'] as GemBadgeRenderMode[]).map(mode => (
+                <TogglePill
+                  key={mode}
+                  active={selectedRenderMode === mode}
+                  onClick={() => setSelectedRenderMode(mode)}
+                >
+                  {mode}
+                </TogglePill>
+              ))}
+            </div>
+
             <div style={{ ...s.center, gap: 16 }}>
               <GemBadge
                 stone={selectedStone}
                 cut={selectedCut}
+                renderMode={selectedRenderMode}
                 size={124}
                 glow={glowEnabled}
                 glowIntensity={glowIntensity}
               />
               <span style={s.badgeLabel}>
-                {selectedStone} preview
+                {selectedStone} preview ({previewModeLabel})
               </span>
             </div>
 
@@ -288,6 +310,7 @@ export default function Page() {
                 <GemBadge
                   stone={stone}
                   cut={selectedCut}
+                  renderMode="webgl"
                   size={80}
                   glow={glowEnabled}
                   glowIntensity={glowIntensity}
@@ -304,6 +327,7 @@ export default function Page() {
               glow={glowEnabled}
               glowIntensity={glowIntensity}
               cut={selectedCut}
+              renderMode="webgl"
               stone={selectedStone}
             />
           </div>
@@ -317,6 +341,7 @@ export default function Page() {
                   <GemBadge
                     stone={selectedStone}
                     cut={selectedCut}
+                    renderMode="webgl"
                     size={sz}
                     glow={glowEnabled}
                     glowIntensity={glowIntensity}
@@ -335,6 +360,7 @@ export default function Page() {
                   <GemBadge
                     stone={selectedStone}
                     cut={cut}
+                    renderMode="webgl"
                     size={92}
                     glow={glowEnabled}
                     glowIntensity={glowIntensity}
@@ -349,56 +375,23 @@ export default function Page() {
             <p style={{ ...s.badgeLabel, marginBottom: 16 }}>glow comparison</p>
             <div style={{ ...s.row, justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} size={92} glow={false} />
+                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow={false} />
                 <span style={s.badgeLabel}>off</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} size={92} glow glowIntensity={0.45} />
+                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={0.45} />
                 <span style={s.badgeLabel}>soft</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} size={92} glow glowIntensity={0.9} />
+                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={0.9} />
                 <span style={s.badgeLabel}>medium</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} size={92} glow glowIntensity={1.35} />
+                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={1.35} />
                 <span style={s.badgeLabel}>strong</span>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <hr style={s.divider} />
-
-      {/* ── CSS GEM BUTTONS ───────────────────────────────────────────────── */}
-      <section style={s.section}>
-        <p style={s.sectionLabel}>CSS Gem Buttons</p>
-        <div style={s.row}>
-          {ALL_CSS_GEMS.map(gem => (
-            <GemButton key={gem} gem={gem} size="md">
-              {gem.charAt(0).toUpperCase() + gem.slice(1)}
-            </GemButton>
-          ))}
-        </div>
-      </section>
-
-      <section style={s.section}>
-        <p style={s.sectionLabel}>Sizes</p>
-        <div style={{ ...s.row, alignItems: 'flex-end' }}>
-          <GemButton gem="sapphire" size="sm">Small</GemButton>
-          <GemButton gem="sapphire" size="md">Medium</GemButton>
-          <GemButton gem="sapphire" size="lg">Large</GemButton>
-          <GemButton gem="sapphire" size="xl">Extra Large</GemButton>
-        </div>
-      </section>
-
-      <section style={s.section}>
-        <p style={s.sectionLabel}>States</p>
-        <div style={s.row}>
-          <GemButton gem="ruby"     size="md" glow={false}>No Glow</GemButton>
-          <GemButton gem="amethyst" size="md" pulse>Pulsing</GemButton>
-          <GemButton gem="emerald"  size="md" disabled>Disabled</GemButton>
         </div>
       </section>
 
