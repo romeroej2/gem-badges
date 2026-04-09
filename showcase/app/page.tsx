@@ -200,6 +200,28 @@ const s: Record<string, React.CSSProperties> = {
     width: 'min(100%, 320px)',
     accentColor: '#5d8cff',
   },
+  tabs: {
+    display: 'flex',
+    gap: 4,
+    marginBottom: 32,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  tab: {
+    padding: '10px 20px',
+    borderRadius: 8,
+    border: 'none',
+    background: 'rgba(255,255,255,0.04)',
+    color: 'rgba(255,255,255,0.50)',
+    fontSize: 13,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    transition: 'all 160ms ease',
+  },
+  tabActive: {
+    background: 'rgba(93,140,255,0.20)',
+    color: '#dceaff',
+  },
 }
 
 export default function Page() {
@@ -208,9 +230,17 @@ export default function Page() {
   const [selectedRenderMode, setSelectedRenderMode] = useState<GemBadgeRenderMode>('webgl')
   const [glowEnabled, setGlowEnabled] = useState(true)
   const [glowIntensity, setGlowIntensity] = useState(0.28)
+  const [activeTab, setActiveTab] = useState<string>('stones')
   const previewModeLabel = selectedRenderMode === 'webgl'
     ? 'library webgl'
     : 'dom'
+
+  const TABS = [
+    { id: 'stones', label: 'All Stones' },
+    { id: 'sizes', label: 'Sizes' },
+    { id: 'cuts', label: 'Cuts' },
+    { id: 'glow', label: 'Glow' },
+  ]
 
   return (
     <div style={s.page}>
@@ -303,24 +333,111 @@ export default function Page() {
             </div>
           </div>
 
-          {/* All stones hero row */}
-          <div style={{ ...s.row, justifyContent: 'center' }}>
-            {ALL_BADGE_STONES.map(stone => (
-              <div key={stone} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                <GemBadge
-                  stone={stone}
-                  cut={selectedCut}
-                  renderMode="webgl"
-                  size={80}
-                  glow={glowEnabled}
-                  glowIntensity={glowIntensity}
-                />
-                <span style={s.badgeLabel}>{stone.charAt(0).toUpperCase() + stone.slice(1)}</span>
-              </div>
+          {/* Tabs */}
+          <div style={s.tabs}>
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  ...s.tab,
+                  ...(activeTab === tab.id ? s.tabActive : {}),
+                }}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
 
-          {/* Toolbar context */}
+          {/* All stones hero row */}
+          {activeTab === 'stones' && (
+            <div style={{ ...s.row, justifyContent: 'center' }}>
+              {ALL_BADGE_STONES.map(stone => (
+                <div key={stone} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <GemBadge
+                    stone={stone}
+                    cut={selectedCut}
+                    renderMode="webgl"
+                    size={80}
+                    glow={glowEnabled}
+                    glowIntensity={glowIntensity}
+                  />
+                  <span style={s.badgeLabel}>{stone.charAt(0).toUpperCase() + stone.slice(1)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Sizes — diamond */}
+          {activeTab === 'sizes' && (
+            <div>
+              <p style={{ ...s.badgeLabel, marginBottom: 16 }}>sizes</p>
+              <div style={{ ...s.row, justifyContent: 'center' }}>
+                {[28, 36, 48, 64, 80, 100].map(sz => (
+                  <div key={sz} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <GemBadge
+                      stone={selectedStone}
+                      cut={selectedCut}
+                      renderMode="webgl"
+                      size={sz}
+                      glow={glowEnabled}
+                      glowIntensity={glowIntensity}
+                    />
+                    <span style={s.badgeLabel}>{sz}px</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cuts */}
+          {activeTab === 'cuts' && (
+            <div>
+              <p style={{ ...s.badgeLabel, marginBottom: 16 }}>{selectedStone} cuts</p>
+              <div style={{ ...s.row, justifyContent: 'center' }}>
+                {ALL_DIAMOND_CUTS.map(cut => (
+                  <div key={cut} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <GemBadge
+                      stone={selectedStone}
+                      cut={cut}
+                      renderMode="webgl"
+                      size={92}
+                      glow={glowEnabled}
+                      glowIntensity={glowIntensity}
+                    />
+                    <span style={s.badgeLabel}>{cut}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Glow comparison */}
+          {activeTab === 'glow' && (
+            <div>
+              <p style={{ ...s.badgeLabel, marginBottom: 16 }}>glow comparison</p>
+              <div style={{ ...s.row, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow={false} />
+                  <span style={s.badgeLabel}>off</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={0.45} />
+                  <span style={s.badgeLabel}>soft</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={0.9} />
+                  <span style={s.badgeLabel}>medium</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={1.35} />
+                  <span style={s.badgeLabel}>strong</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Toolbar context - always visible */}
           <div>
             <p style={{ ...s.badgeLabel, marginBottom: 14 }}>in a toolbar</p>
             <MockToolbar
@@ -330,67 +447,6 @@ export default function Page() {
               renderMode="webgl"
               stone={selectedStone}
             />
-          </div>
-
-          {/* Sizes — diamond */}
-          <div>
-            <p style={{ ...s.badgeLabel, marginBottom: 16 }}>sizes</p>
-            <div style={{ ...s.row, justifyContent: 'center' }}>
-              {[28, 36, 48, 64, 80, 100].map(sz => (
-                <div key={sz} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <GemBadge
-                    stone={selectedStone}
-                    cut={selectedCut}
-                    renderMode="webgl"
-                    size={sz}
-                    glow={glowEnabled}
-                    glowIntensity={glowIntensity}
-                  />
-                  <span style={s.badgeLabel}>{sz}px</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p style={{ ...s.badgeLabel, marginBottom: 16 }}>{selectedStone} cuts</p>
-            <div style={{ ...s.row, justifyContent: 'center' }}>
-              {ALL_DIAMOND_CUTS.map(cut => (
-                <div key={cut} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <GemBadge
-                    stone={selectedStone}
-                    cut={cut}
-                    renderMode="webgl"
-                    size={92}
-                    glow={glowEnabled}
-                    glowIntensity={glowIntensity}
-                  />
-                  <span style={s.badgeLabel}>{cut}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p style={{ ...s.badgeLabel, marginBottom: 16 }}>glow comparison</p>
-            <div style={{ ...s.row, justifyContent: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow={false} />
-                <span style={s.badgeLabel}>off</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={0.45} />
-                <span style={s.badgeLabel}>soft</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={0.9} />
-                <span style={s.badgeLabel}>medium</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <GemBadge stone={selectedStone} cut={selectedCut} renderMode="webgl" size={92} glow glowIntensity={1.35} />
-                <span style={s.badgeLabel}>strong</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>

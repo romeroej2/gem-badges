@@ -20,11 +20,12 @@
   "files": ["dist", "src"],
   "sideEffects": false,
   "scripts": {
+    "test": "vitest",
     "build": "vite build && tsc --emitDeclarationOnly",
     "dev": "vite build --watch",
     "showcase:dev": "cd showcase && bun run dev",
-    "showcase:build": "cd showcase && bun run build",
-    "showcase:start": "cd showcase && bun run start"
+    "showcase:build": "bun --cwd showcase run build",
+    "showcase:start": "bun --cwd showcase run start"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -34,6 +35,8 @@
     "three": "^0.183.2"
   },
   "devDependencies": {
+    "vitest": "^2.0.0",
+    "@testing-library/react": "^13.4.0",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.183.1",

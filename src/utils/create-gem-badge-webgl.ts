@@ -934,21 +934,35 @@ export function mountGemBadgeWebGL(
   let outerDisposed = false
   let webglCanvas: HTMLCanvasElement | null = null
   let webglCleanup: (() => void) | null = null
+  let webglFailed = false
+  let retryTimer: ReturnType<typeof setTimeout> | null = null
 
   const activate = () => {
     if (webglCleanup || outerDisposed) return
+    if (webglFailed && !retryTimer) {
+      retryTimer = setTimeout(() => {
+        retryTimer = null
+        webglFailed = false
+        activate()
+      }, 2000)
+      return
+    }
+    if (webglFailed) return
 
-    // Create a fresh canvas element — reusing a canvas after loseContext() is not possible
     webglCanvas = makeOverlayCanvas()
     container.appendChild(webglCanvas)
 
     const onContextLost = () => {
-      // Browser lost the context (e.g. hit the WebGL context limit while scrolling).
-      // Run the full outer cleanup: disconnects observers, removes the blank WebGL
-      // canvas, and restores the 2D fallback so the badge doesn't appear broken.
-      const savedCleanup = webglCleanup
-      webglCleanup = null  // clear first to prevent deactivate() double-running
-      savedCleanup?.()
+      if (webglCleanup) {
+        webglCleanup()
+        webglCleanup = null
+      }
+      if (webglCanvas) {
+        webglCanvas.remove()
+        webglCanvas = null
+      }
+      fallbackCanvas.style.opacity = '1'
+      webglFailed = true
     }
 
     const cleanup = mountWebGLCore(webglCanvas, { ...options, targetElement: container, onContextLost })
@@ -961,35 +975,46 @@ export function mountGemBadgeWebGL(
         fallbackCanvas.style.opacity = '1'
       }
     } else {
-      // WebGL unavailable on this device — remove the failed canvas and keep 2D
       webglCanvas.remove()
       webglCanvas = null
+      webglFailed = true
     }
   }
 
   const deactivate = () => {
-    if (!webglCleanup) return
-    webglCleanup()
-    webglCleanup = null
+  }
+
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+  const debouncedToggle = (shouldActivate: boolean) => {
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      if (shouldActivate) {
+        activate()
+      }
+    }, 100)
   }
 
   if (typeof IntersectionObserver === 'undefined') {
     activate()
     return () => {
       outerDisposed = true
+      if (debounceTimer) clearTimeout(debounceTimer)
       webglCleanup?.()
       fallbackCanvas.remove()
     }
   }
 
   const observer = new IntersectionObserver(
-    (entries) => entries.forEach((e) => (e.isIntersecting ? activate() : deactivate())),
+    (entries) => entries.forEach((e) => debouncedToggle(e.isIntersecting)),
     { threshold: 0.01 }
   )
   observer.observe(container)
 
   return () => {
     outerDisposed = true
+    if (debounceTimer) clearTimeout(debounceTimer)
+    if (retryTimer) clearTimeout(retryTimer)
     observer.disconnect()
     webglCleanup?.()
     fallbackCanvas.remove()
