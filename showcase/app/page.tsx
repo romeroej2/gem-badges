@@ -5,7 +5,6 @@ import {
   GemBadge,
   type DiamondCut,
   type GemBadgeStone,
-  type GemBadgeRenderMode,
   type GemView,
 } from '../components/GemBadge'
 
@@ -83,33 +82,55 @@ function MockToolbar({
   )
 }
 
-function TogglePill({
-  active,
-  children,
-  onClick,
+function SegmentedControl<T extends string>({
+  options,
+  selected,
+  onChange,
 }: {
-  active: boolean
-  children: React.ReactNode
-  onClick: () => void
+  options: T[]
+  selected: T
+  onChange: (value: T) => void
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        padding: '8px 14px',
-        borderRadius: 999,
-        border: active ? '1px solid rgba(120,180,255,0.55)' : '1px solid rgba(255,255,255,0.10)',
-        background: active ? 'rgba(70,120,255,0.18)' : 'rgba(255,255,255,0.04)',
-        color: active ? '#dceaff' : 'rgba(255,255,255,0.72)',
-        fontSize: 12,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 2,
+      padding: 4,
+      background: 'rgba(0,0,0,0.25)',
+      borderRadius: 999,
+      border: '1px solid rgba(255,255,255,0.06)',
+      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.15)',
+    }}>
+      {options.map(option => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option)}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 999,
+            border: 'none',
+            background: selected === option
+              ? 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06))'
+              : 'transparent',
+            boxShadow: selected === option
+              ? 'inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.15)'
+              : 'none',
+            color: selected === option ? '#fff' : 'rgba(255,255,255,0.45)',
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            transition: 'all 150ms ease',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -234,15 +255,11 @@ const s: Record<string, React.CSSProperties> = {
 export default function Page() {
   const [selectedStone, setSelectedStone] = useState<GemBadgeStone>('diamond')
   const [selectedCut, setSelectedCut] = useState<DiamondCut>('round')
-  const [selectedRenderMode, setSelectedRenderMode] = useState<GemBadgeRenderMode>('webgl')
   const [selectedView, setSelectedView] = useState<GemView>('top')
   const [selectedRotation, setSelectedRotation] = useState(0)
   const [glowEnabled, setGlowEnabled] = useState(true)
   const [glowIntensity, setGlowIntensity] = useState(0.28)
   const [activeTab, setActiveTab] = useState<string>('stones')
-  const previewModeLabel = selectedRenderMode === 'webgl'
-    ? 'library webgl'
-    : 'dom'
 
   const TABS = [
     { id: 'stones', label: 'All Stones' },
@@ -261,61 +278,29 @@ export default function Page() {
         <p style={s.sub}>Precious Stone Collection</p>
       </header>
 
-      <hr style={s.divider} />
-
       {/* ── 3D GEM BADGES ─────────────────────────────────────────────────── */}
       <section style={s.section}>
         <p style={s.sectionLabel}>3D Gem Badges</p>
         <div style={s.center}>
 
           <div style={s.controlsCard}>
-            <div style={s.controlRow}>
-              {ALL_BADGE_STONES.map(stone => (
-                <TogglePill
-                  key={stone}
-                  active={selectedStone === stone}
-                  onClick={() => setSelectedStone(stone)}
-                >
-                  {stone}
-                </TogglePill>
-              ))}
-            </div>
+            <SegmentedControl
+              options={ALL_BADGE_STONES}
+              selected={selectedStone}
+              onChange={setSelectedStone}
+            />
 
-            <div style={s.controlRow}>
-              {ALL_DIAMOND_CUTS.map(cut => (
-                <TogglePill
-                  key={cut}
-                  active={selectedCut === cut}
-                  onClick={() => setSelectedCut(cut)}
-                >
-                  {cut}
-                </TogglePill>
-              ))}
-            </div>
+            <SegmentedControl
+              options={ALL_DIAMOND_CUTS}
+              selected={selectedCut}
+              onChange={setSelectedCut}
+            />
 
-            <div style={s.controlRow}>
-              {(['webgl', 'dom'] as GemBadgeRenderMode[]).map(mode => (
-                <TogglePill
-                  key={mode}
-                  active={selectedRenderMode === mode}
-                  onClick={() => setSelectedRenderMode(mode)}
-                >
-                  {mode}
-                </TogglePill>
-              ))}
-            </div>
-
-            <div style={s.controlRow}>
-              {(['top', 'front'] as GemView[]).map(view => (
-                <TogglePill
-                  key={view}
-                  active={selectedView === view}
-                  onClick={() => setSelectedView(view as GemView)}
-                >
-                  {view}
-                </TogglePill>
-              ))}
-            </div>
+            <SegmentedControl
+              options={['top', 'front']}
+              selected={selectedView}
+              onChange={setSelectedView}
+            />
 
             <div style={{ ...s.center, gap: 10 }}>
               <span style={s.controlLabel}>Rotation: {selectedRotation}°</span>
@@ -331,28 +316,21 @@ export default function Page() {
             </div>
 
             <div style={{ ...s.center, gap: 16 }}>
+              <SegmentedControl
+                options={['glow on', 'glow off']}
+                selected={glowEnabled ? 'glow on' : 'glow off'}
+                onChange={(v) => setGlowEnabled(v === 'glow on')}
+              />
               <GemBadge
                 stone={selectedStone}
                 cut={selectedCut}
-                renderMode={selectedRenderMode}
+                renderMode="webgl"
                 view={selectedView}
                 rotation={selectedRotation}
                 size={124}
                 glow={glowEnabled}
                 glowIntensity={glowIntensity}
               />
-              <span style={s.badgeLabel}>
-                {selectedStone} preview ({previewModeLabel})
-              </span>
-            </div>
-
-            <div style={s.controlRow}>
-              <TogglePill active={glowEnabled} onClick={() => setGlowEnabled(true)}>
-                Glow On
-              </TogglePill>
-              <TogglePill active={!glowEnabled} onClick={() => setGlowEnabled(false)}>
-                Glow Off
-              </TogglePill>
             </div>
 
             <div style={{ ...s.center, gap: 10 }}>
@@ -507,7 +485,7 @@ export default function Page() {
               glow={glowEnabled}
               glowIntensity={glowIntensity}
               cut={selectedCut}
-              renderMode={selectedRenderMode}
+              renderMode="webgl"
               stone={selectedStone}
               rotation={selectedRotation}
               view={selectedView}
