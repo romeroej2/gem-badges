@@ -25,6 +25,8 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/**/__tests__/**',
         'src/test/**',
+        'src/types.ts',
+        'src/utils/gem-badge-webgl/types.ts',
       ],
     },
   },
