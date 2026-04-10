@@ -5,6 +5,7 @@ import {
   GemBadge,
   type DiamondCut,
   type GemBadgeStone,
+  type GemBadgeRenderMode,
   type GemView,
 } from '../components/GemBadge'
 
