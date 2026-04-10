@@ -12,7 +12,7 @@ Each badge is a physically-based 3D gem with realistic light refraction, chromat
 
 ![gem-badges showcase](screenshots/showcase-full.png)
 
-**GEM BADGE LAB** — interactive demo at `showcase/`
+**GEM BADGE LAB** — interactive demo at [gem-badges-showcase.vercel.app](https://gem-badges-showcase.vercel.app/)
 
 Run `bun run showcase:dev` to open the demo app:
 - Interactive stone / cut / size / glow controls
