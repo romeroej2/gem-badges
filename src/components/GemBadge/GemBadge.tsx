@@ -34,7 +34,18 @@ export function GemBadge({
   ...rest
 }: GemBadgeProps) {
   const resolved = { ...DEFAULT_CONFIG, ...config }
-  const material = GEM_BADGE_MATERIALS[resolved.material]
+  const {
+    animate,
+    cut,
+    glow,
+    glowIntensity,
+    material: materialKey,
+    renderMode,
+    rotation,
+    size,
+    view,
+  } = resolved
+  const material = GEM_BADGE_MATERIALS[materialKey]
   const rootRef = useRef<HTMLSpanElement>(null)
   const [hovered, setHovered] = useState(false)
   const disabled = rest['aria-disabled'] === true
@@ -45,39 +56,40 @@ export function GemBadge({
     if (!container) return
 
     const controller = mountGemBadgeWebGL(container, {
-      material: resolved.material,
-      cut: resolved.cut,
-      glow: resolved.glow,
-      glowIntensity: resolved.glowIntensity,
-      animate: resolved.animate,
-      force2d: resolved.renderMode === 'dom',
+      material: materialKey,
+      cut,
+      glow,
+      glowIntensity,
+      animate,
+      force2d: renderMode === 'dom',
       disabled,
-      view: resolved.view,
-      rotation: resolved.rotation,
+      view,
+      rotation,
     })
     webglRef.current = controller
 
     return controller.cleanup
   }, [
+    animate,
+    cut,
     disabled,
-    resolved.animate,
-    resolved.cut,
-    resolved.glow,
-    resolved.glowIntensity,
-    resolved.material,
-    resolved.renderMode,
-    resolved.view,
+    glow,
+    glowIntensity,
+    materialKey,
+    renderMode,
+    rotation,
+    view,
   ])
 
   useEffect(() => {
-    webglRef.current?.setRotation(resolved.rotation)
-  }, [resolved.rotation])
+    webglRef.current?.setRotation(rotation)
+  }, [rotation])
 
   const interactive = typeof onClick === 'function'
   const computedRole = role ?? (interactive ? 'button' : undefined)
   const computedTabIndex = interactive ? (tabIndex ?? 0) : tabIndex
-  const haloOpacity = resolved.glow
-    ? 0.22 + resolved.glowIntensity * (hovered ? 0.18 : 0.10)
+  const haloOpacity = glow
+    ? 0.22 + glowIntensity * (hovered ? 0.18 : 0.10)
     : 0
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLSpanElement> = (event) => {
@@ -98,8 +110,8 @@ export function GemBadge({
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: resolved.size,
-    height: resolved.size,
+    width: size,
+    height: size,
     isolation: 'isolate',
     lineHeight: 0,
     cursor: interactive ? 'pointer' : 'default',
@@ -111,7 +123,7 @@ export function GemBadge({
       ? `drop-shadow(0 8px 22px rgba(0,0,0,0.26))`
       : 'drop-shadow(0 8px 18px rgba(0,0,0,0.16))',
     ...style,
-  }), [haloOpacity, hovered, interactive, resolved.size, style])
+  }), [haloOpacity, hovered, interactive, size, style])
 
   return (
     <span

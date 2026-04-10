@@ -17,10 +17,15 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "src"],
+  "files": ["dist", "README.md", "LICENSE"],
   "sideEffects": false,
   "scripts": {
-    "test": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
     "build": "vite build && tsc --emitDeclarationOnly",
     "dev": "vite build --watch",
     "showcase:dev": "cd showcase && bun run dev",
@@ -35,12 +40,21 @@
     "three": "^0.183.2"
   },
   "devDependencies": {
-    "@testing-library/react": "^13.4.0",
+    "@eslint/js": "^9.24.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/jest-dom": "^6.6.3",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^4",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.24.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.0.0",
+    "jsdom": "^25.0.1",
     "typescript": "^5",
+    "typescript-eslint": "^8.29.1",
     "vite": "^5",
     "vite-plugin-dts": "^3",
     "vitest": "^2.0.0"

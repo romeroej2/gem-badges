@@ -2,7 +2,9 @@
 
 Precious stone-inspired React badge and button components rendered with WebGL and THREE.js.
 
-Each badge is a physically-based 3D gem with realistic light refraction, chromatic dispersion, and per-material optical properties — diamond (IOR 2.42), ruby, emerald, sapphire, amethyst, and topaz. All cuts render fully in WebGL with a graceful DOM fallback.
+For the moments when your interface needs a little frost, a little drip, and just enough unnecessary luxury to feel correct.
+
+Each badge is a physically-based 3D gem with realistic light refraction, chromatic dispersion, and per-material optical properties — diamond (IOR 2.42), ruby, emerald, sapphire, amethyst, and topaz. All cuts render fully in WebGL with a graceful DOM fallback, so yes, you can absolutely frost and drip your UI responsibly.
 
 ---
 
@@ -35,6 +37,8 @@ npm install gem-badges
 ---
 
 ## Quick start
+
+Add one when a plain circle feels underdressed.
 
 ```tsx
 import { GemBadge } from 'gem-badges'
@@ -90,6 +94,8 @@ When an `onClick` handler is passed, the badge automatically becomes a button:
 ### `GemButton`
 
 A full `<button>` element with an embedded 3D WebGL gem and animated glow.
+
+Ideal for CTAs that deserve to arrive wearing jewelry.
 
 ```tsx
 import { GemButton, DiamondButton, RubyButton } from 'gem-badges'
